@@ -20,6 +20,7 @@ import reservationRoutes from './routes/reservations.js';
 import promotionRoutes from './routes/promotions.js';
 import inventoryRoutes from './routes/inventory.js';
 import staffRoutes from './routes/staff.js';
+import paymentRoutes from './routes/payments.js';
 import { errorHandler, notFound } from './utils/errors.js';
 
 const app = express();
@@ -47,6 +48,7 @@ app.use('/api/reservations', reservationRoutes);
 app.use('/api/promotions', promotionRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/staff', staffRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
