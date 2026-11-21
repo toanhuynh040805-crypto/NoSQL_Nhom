@@ -67,9 +67,31 @@ await request('PATCH', '/api/orders/' + orderId + '/status', kt, { status: 'prep
 await request('PATCH', '/api/staff/orders/' + orderId + '/items/0', st, { quantity: 4 }, 409);
 await request('PATCH', '/api/orders/' + orderId + '/status', kt, { status: 'ready' });
 await request('PATCH', '/api/orders/' + orderId + '/status', st, { status: 'completed' });
-await request('PATCH', '/api/orders/' + orderId + '/payment', ct, { paymentStatus: 'paid' });
+const billQuote = (await request('GET', '/api/payments/session/' + sessionId + '/quote', ct)).quote;
+assert.equal(billQuote.amount, menu.foods[0].price * 3, 'table bill must reflect updated quantity');
+assert.equal(billQuote.transfer.bankName, 'BIDV');
+assert.equal(billQuote.transfer.bankBin, '970418');
+assert.equal(billQuote.transfer.bankAccountNo, '5811704638');
+assert.match(billQuote.transfer.qrUrl, /img\\.vietqr\\.io/);
+await request('PATCH', '/api/orders/' + orderId + '/payment', ct, { paymentStatus: 'paid' }, 410);
+await request('POST', '/api/payments/session/' + sessionId + '/confirm', ct, {
+  method: 'cash', expectedAmount: billQuote.amount,
+  cashReceived: billQuote.amount + 50000, requestId: randomUUID()
+}, 423);
 await request('PATCH', '/api/staff/sessions/' + sessionId + '/close', ct, undefined, 423);
 await request('DELETE', '/api/staff/sessions/' + sessionId + '/lock', st, undefined, 204);
+const cashPaymentRequest = {
+  method: 'cash', expectedAmount: billQuote.amount,
+  cashReceived: billQuote.amount + 50000, requestId: randomUUID()
+};
+const cashPaid = await request('POST', '/api/payments/session/' + sessionId + '/confirm', ct, cashPaymentRequest, 201);
+assert.equal(cashPaid.receipt.changeAmount, 50000);
+assert.equal(cashPaid.receipt.method, 'cash');
+const replay = await request('POST', '/api/payments/session/' + sessionId + '/confirm', ct, cashPaymentRequest);
+assert.equal(replay.duplicate, true, 'double submit must not produce another receipt');
+const settled = await request('GET', '/api/staff/sessions/' + sessionId, ct);
+assert.ok(settled.orders.every(order => order.paymentStatus === 'paid'));
+
 const closed = await request('PATCH', '/api/staff/sessions/' + sessionId + '/close', ct);
 assert.equal(closed.session.status, 'closed');
 const after = await request('GET', '/api/staff/tables', st);
@@ -103,4 +125,32 @@ await request('PATCH', '/api/reservations/' + duplicateBooking.reservation._id +
   status: 'confirmed', tableId: booked._id
 }, 409);
 await request('PATCH', '/api/reservations/' + reserve.reservation._id + '/cancel', ut);
-console.log('PASS: staff table sessions, Redis lock, idempotent orders, kitchen, cashier, transfer, reservation conflict.');
+
+// Customer takes away food and views a personal bank-transfer quote.
+// The QR does NOT mark the bill paid until the cashier verifies the received funds.
+await request('PUT', '/api/cart/items/' + menu.foods[0]._id, ut, { quantity: 1 });
+const takeaway = await request('POST', '/api/orders', ut, {
+  orderType: 'takeaway', paymentMethod: 'bank-transfer'
+}, 201);
+const customerQuote = (await request('GET', '/api/payments/order/' + takeaway.order._id + '/quote', ut)).quote;
+assert.equal(customerQuote.transfer.bankAccountName, 'HUYNH DUC TOAN');
+assert.equal(customerQuote.amount, takeaway.order.totalAmount);
+await request('POST', '/api/payments/order/' + takeaway.order._id + '/confirm', ut, {
+  method: 'bank-transfer', expectedAmount: customerQuote.amount,
+  bankVerifiedManually: true, bankTransactionRef: 'TEST-REF-CUSTOMER-1001', requestId: randomUUID()
+}, 403);
+await request('POST', '/api/payments/order/' + takeaway.order._id + '/confirm', ct, {
+  method: 'bank-transfer', expectedAmount: customerQuote.amount,
+  bankVerifiedManually: false, bankTransactionRef: 'TEST-REF-CUSTOMER-1001', requestId: randomUUID()
+}, 400);
+const wire = await request('POST', '/api/payments/order/' + takeaway.order._id + '/confirm', ct, {
+  method: 'bank-transfer', expectedAmount: customerQuote.amount,
+  bankVerifiedManually: true, bankTransactionRef: 'TEST-REF-CUSTOMER-1001', requestId: randomUUID()
+}, 201);
+assert.equal(wire.receipt.method, 'bank-transfer');
+assert.equal(wire.receipt.bankVerifiedManually, true);
+const afterWire = (await request('GET', '/api/orders/mine', ut)).orders
+  .find(order => order._id === takeaway.order._id);
+assert.equal(afterWire.paymentStatus, 'paid');
+assert.equal(afterWire.paymentMethod, 'bank-transfer');
+console.log('PASS: waiter, kitchen, cashier, cash change, VietQR, manually verified transfer, reservation conflicts.');
