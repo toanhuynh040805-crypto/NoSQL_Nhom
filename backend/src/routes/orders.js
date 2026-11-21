@@ -84,6 +84,7 @@ router.patch('/:id/cancel', requireAuth, asyncHandler(async (req, res) => {
   const order = await Order.findOne({ _id: req.params.id, customer: req.user._id });
   if (!order) throw new AppError(404, 'Không tìm thấy đơn hàng');
   if (order.status !== 'pending') throw new AppError(409, 'Chỉ có thể hủy đơn đang chờ xác nhận');
+  if (order.paymentStatus === 'paid') throw new AppError(409, 'Đơn đã thanh toán, phải xử lý hoàn tiền trước');
   order.status = 'cancelled';
   order.statusHistory.push({ status: 'cancelled', changedAt: new Date() });
   await order.save();
@@ -111,6 +112,9 @@ router.patch('/:id/status', requireAuth, requireRole('admin', 'staff', 'kitchen'
   const order = await Order.findById(req.params.id);
   if (!order) throw new AppError(404, 'Không tìm thấy đơn hàng');
   if (['completed', 'cancelled'].includes(order.status)) throw new AppError(409, 'Đơn hàng đã kết thúc');
+  if (status === 'cancelled' && order.paymentStatus === 'paid') {
+    throw new AppError(409, 'Đơn đã thanh toán, phải xử lý hoàn tiền trước');
+  }
   const allowedByRole = {
     kitchen: ['preparing', 'ready'],
     cashier: ['completed', 'cancelled'],
@@ -147,15 +151,8 @@ router.patch('/:id/status', requireAuth, requireRole('admin', 'staff', 'kitchen'
   res.json({ order });
 }));
 
-router.patch('/:id/payment', requireAuth, requireRole('admin', 'cashier'), asyncHandler(async (req, res) => {
-  const body = z.object({
-    paymentStatus: z.enum(['pending', 'paid', 'refunded']),
-    paymentMethod: z.enum(['cash', 'bank-transfer', 'counter']).optional()
-  }).parse(req.body);
-  const order = await Order.findByIdAndUpdate(req.params.id, body, { new: true, runValidators: true });
-  if (!order) throw new AppError(404, 'Không tìm thấy đơn hàng');
-  res.json({ order });
+router.patch('/:id/payment', requireAuth, requireRole('admin', 'cashier'), asyncHandler(async () => {
+  throw new AppError(410, 'Vui lòng thanh toán qua /api/payments/order/:id/confirm hoặc /api/payments/session/:id/confirm');
 }));
 
 export default router;
-
