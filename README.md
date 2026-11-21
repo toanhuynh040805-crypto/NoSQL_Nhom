@@ -179,7 +179,7 @@ Sau khi backend chạy, muốn tự đo thời gian phản hồi HTTP của API 
 ```powershell
 node scripts/benchmark-nosql.mjs
 ```
-Lưu số liệu chạy thật vào báo cáo; không được coi số liệu minh họa là kết quả đo. Đồ án không bắt buộc phải dùng Cassandra nếu đề tài dùng hướng NoSQL hoàn toàn với ba hệ trên, nhưng cần xác nhận giảng viên về diễn giải “ít nhất bốn loại dữ liệu” và nộp đủ minh chứng theo hướng dẫn.
+Lưu số liệu chạy thật vào báo cáo; không được coi số liệu minh họa là kết quả đo. Trong tài liệu hướng dẫn, Cassandra được nêu như lựa chọn phù hợp với log/time-series; phần yêu cầu chung không khẳng định bắt buộc dùng đủ bốn DBMS. Nhóm vẫn cần xác nhận với giảng viên cách diễn giải “ít nhất bốn loại dữ liệu” và nộp đủ minh chứng.
 
 ## Ngoài phạm vi bản đồ án hiện tại
 
