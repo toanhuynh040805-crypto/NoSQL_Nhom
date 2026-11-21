@@ -16,6 +16,11 @@ const orderSchema = new mongoose.Schema({
   tableNumber: { type: String, trim: true },
   note: { type: String, default: '' },
   subtotal: { type: Number, required: true, min: 0 },
+  discountAmount: { type: Number, default: 0, min: 0 },
+  totalAmount: { type: Number, required: true, min: 0 },
+  promotionCode: { type: String, trim: true, uppercase: true },
+  paymentMethod: { type: String, enum: ['cash', 'bank-transfer', 'counter'], default: 'counter' },
+  paymentStatus: { type: String, enum: ['pending', 'paid', 'refunded'], default: 'pending' },
   status: {
     type: String,
     enum: ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'],
@@ -29,6 +34,7 @@ const orderSchema = new mongoose.Schema({
 
 orderSchema.index({ customer: 1, createdAt: -1 });
 orderSchema.index({ status: 1, createdAt: -1 });
+orderSchema.index({ createdAt: -1, paymentStatus: 1 });
 
 export const Order = mongoose.model('Order', orderSchema);
 

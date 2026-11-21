@@ -20,12 +20,29 @@ Source này là dự án độc lập. Dữ liệu minh họa và một số ả
 - Theo dõi trạng thái và lịch sử đơn.
 - API đánh giá món trong đơn đã hoàn thành.
 - Tự động chuyển giỏ khách sang tài khoản sau khi đăng nhập/đăng ký.
+- Quản lý hồ sơ, đổi mật khẩu, điểm thành viên và món yêu thích.
+- Đặt bàn, chọn khu vực, theo dõi hoặc hủy yêu cầu đặt bàn.
+- Xem khuyến mãi, nhập mã giảm giá và chọn phương thức thanh toán.
+- Nhận thông báo khi đơn hàng hoặc lịch đặt bàn thay đổi.
 
 ### Quản trị
 
-- Dashboard khách hàng, món ăn, đơn đang xử lý và doanh thu ngày.
-- Danh sách đơn và cập nhật trạng thái chế biến.
-- API quản lý danh mục và món ăn (thêm, sửa, ngừng phục vụ).
+- Dashboard khách hàng, món ăn, đơn đang xử lý, bàn, đặt bàn và doanh thu ngày.
+- Quản lý đơn hàng, thanh toán, quy trình xác nhận → chế biến → sẵn sàng → hoàn thành.
+- Quản lý món, ảnh món, danh mục, bàn, đặt bàn, khách hàng, nhân viên và phân quyền.
+- Quản lý khuyến mãi và báo cáo doanh thu/món bán chạy theo thời gian.
+- Quản lý kho nguyên liệu, nhập/xuất kho và cảnh báo sắp hết hàng.
+- Màn hình bếp riêng, tự cập nhật danh sách món mỗi 10 giây.
+
+### Vai trò hệ thống
+
+| Vai trò | Phạm vi chính |
+|---|---|
+| `admin` | Toàn bộ hệ thống, thực đơn, người dùng, báo cáo |
+| `staff` | Đơn hàng, đặt bàn và sơ đồ bàn |
+| `kitchen` | Nhận món, bắt đầu chế biến và báo món sẵn sàng |
+| `cashier` | Thanh toán, hoàn tất đơn và báo cáo doanh thu |
+| `customer` | Đặt món, đặt bàn và các chức năng khách hàng |
 
 ## Kiến trúc
 
@@ -72,6 +89,9 @@ Tài khoản mẫu sau khi seed:
 |---|---|---|
 | Quản trị | `admin@quanan.vn` | `123456` |
 | Khách hàng | `khach@quanan.vn` | `123456` |
+| Phục vụ | `staff@quanan.vn` | `123456` |
+| Bếp | `bep@quanan.vn` | `123456` |
+| Thu ngân | `thungan@quanan.vn` | `123456` |
 
 ## Luồng dữ liệu đặt món
 

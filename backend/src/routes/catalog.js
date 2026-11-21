@@ -18,12 +18,12 @@ router.get('/foods', asyncHandler(async (req, res) => {
   const query = z.object({
     search: z.string().trim().max(100).optional(),
     category: z.string().optional(),
-    available: z.enum(['true', 'false']).default('true'),
+    available: z.enum(['true', 'false', 'all']).default('true'),
     sort: z.enum(['popular', 'price-asc', 'price-desc', 'rating', 'newest']).default('popular'),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(50).default(12)
   }).parse(req.query);
-  const filter = { isAvailable: query.available === 'true' };
+  const filter = query.available === 'all' ? {} : { isAvailable: query.available === 'true' };
   if (query.category) filter.category = query.category;
   if (query.search) filter.$text = { $search: query.search };
   const sortMap = {

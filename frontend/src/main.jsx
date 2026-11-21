@@ -3,11 +3,16 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
 import { AppProvider } from './context/AppContext.jsx';
-import AdminPage from './pages/AdminPage.jsx';
 import CartPage from './pages/CartPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import MenuPage from './pages/MenuPage.jsx';
 import OrdersPage from './pages/OrdersPage.jsx';
+import FavoritesPage from './pages/FavoritesPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
+import NotificationsPage from './pages/NotificationsPage.jsx';
+import ReservationsPage from './pages/ReservationsPage.jsx';
+import KitchenPage from './pages/KitchenPage.jsx';
+import OperationsPage from './pages/OperationsPage.jsx';
 import './styles.css';
 
 createRoot(document.getElementById('root')).render(
@@ -16,7 +21,13 @@ createRoot(document.getElementById('root')).render(
     <Route path="/cart" element={<CartPage/>}/>
     <Route path="/login" element={<LoginPage/>}/>
     <Route path="/orders" element={<OrdersPage/>}/>
-    <Route path="/admin" element={<AdminPage/>}/>
+    <Route path="/admin" element={<OperationsPage/>}/>
+    <Route path="/operations" element={<OperationsPage/>}/>
+    <Route path="/kitchen" element={<KitchenPage/>}/>
+    <Route path="/reservations" element={<ReservationsPage/>}/>
+    <Route path="/favorites" element={<FavoritesPage/>}/>
+    <Route path="/profile" element={<ProfilePage/>}/>
+    <Route path="/notifications" element={<NotificationsPage/>}/>
   </Routes></Layout></AppProvider></BrowserRouter></React.StrictMode>
 );
 

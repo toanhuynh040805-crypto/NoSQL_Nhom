@@ -16,7 +16,10 @@ const credentialsSchema = z.object({
 });
 
 function publicUser(user) {
-  return { id: user.id, fullName: user.fullName, email: user.email, phone: user.phone, role: user.role };
+  return {
+    id: user.id, fullName: user.fullName, email: user.email, phone: user.phone,
+    role: user.role, loyaltyPoints: user.loyaltyPoints || 0
+  };
 }
 
 function createToken(user) {
