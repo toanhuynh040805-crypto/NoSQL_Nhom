@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 import { api, money } from '../lib/api.js';
+import PaymentDialog from '../components/PaymentDialog.jsx';
 
 const orderLabels = { pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', preparing: 'Đang chế biến', ready: 'Sẵn sàng', completed: 'Hoàn thành', cancelled: 'Đã hủy' };
 const reservationLabels = { pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', seated: 'Đã nhận bàn', completed: 'Hoàn thành', cancelled: 'Đã hủy', 'no-show': 'Không đến' };
@@ -90,7 +91,15 @@ function Overview({ data }) {
 }
 
 function Orders({ data, user, action }) {
-  return <div className="admin-table-wrap"><table><thead><tr><th>Mã đơn</th><th>Khách/Bàn</th><th>Món</th><th>Thanh toán</th><th>Trạng thái</th></tr></thead><tbody>{(data.orders || []).map(order => <tr key={order._id}><td><b>{order.orderCode}</b><small>{new Date(order.createdAt).toLocaleString('vi-VN')}</small></td><td>{order.customer?.fullName}<small>{order.tableNumber || 'Mang về'}</small></td><td>{order.items.map(item => `${item.quantity}× ${item.name}`).join(', ')}</td><td><b>{money(order.totalAmount ?? order.subtotal)}</b>{['admin', 'cashier'].includes(user.role) && <select value={order.paymentStatus} onChange={e => action(() => api(`/api/orders/${order._id}/payment`, { method: 'PATCH', body: JSON.stringify({ paymentStatus: e.target.value }) }), 'Đã cập nhật thanh toán')}><option value="pending">Chưa thanh toán</option><option value="paid">Đã thanh toán</option><option value="refunded">Đã hoàn tiền</option></select>}</td><td><select value={order.status} disabled={['completed','cancelled'].includes(order.status)} onChange={e => action(() => api(`/api/orders/${order._id}/status`, { method: 'PATCH', body: JSON.stringify({ status: e.target.value }) }), 'Đã cập nhật đơn')}><option value="pending" disabled>{orderLabels.pending}</option><option value="confirmed">{orderLabels.confirmed}</option><option value="preparing">{orderLabels.preparing}</option><option value="ready">{orderLabels.ready}</option><option value="completed">{orderLabels.completed}</option><option value="cancelled">{orderLabels.cancelled}</option></select></td></tr>)}</tbody></table></div>;
+  const [paying, setPaying] = useState(null);
+  return <><div className="admin-table-wrap"><table><thead><tr><th>Mã đơn</th><th>Khách/Bàn</th><th>Món</th><th>Thanh toán</th><th>Trạng thái</th></tr></thead><tbody>{(data.orders || []).map(order => <tr key={order._id}><td><b>{order.orderCode}</b><small>{new Date(order.createdAt).toLocaleString('vi-VN')}</small></td><td>{order.customer?.fullName}<small>{order.tableNumber || 'Mang về'}</small></td><td>{order.items.map(item => `${item.quantity}× ${item.name}`).join(', ')}</td><td><b>{money(order.totalAmount ?? order.subtotal)}</b>{order.paymentStatus === 'paid' ? <small>Đã thanh toán</small> : <small>Chưa thanh toán</small>}
+          {['admin', 'cashier'].includes(user.role) && order.paymentStatus !== 'paid' && !order.tableSession && order.status !== 'cancelled' &&
+            <button type="button" className="table-action" onClick={() => setPaying(order)}>Thu tiền / VietQR</button>}
+          {order.tableSession && <small>Thanh toán tại Sơ đồ bàn</small>}</td><td><select value={order.status} disabled={['completed','cancelled'].includes(order.status)} onChange={e => action(() => api(`/api/orders/${order._id}/status`, { method: 'PATCH', body: JSON.stringify({ status: e.target.value }) }), 'Đã cập nhật đơn')}><option value="pending" disabled>{orderLabels.pending}</option><option value="confirmed">{orderLabels.confirmed}</option><option value="preparing">{orderLabels.preparing}</option><option value="ready">{orderLabels.ready}</option><option value="completed">{orderLabels.completed}</option><option value="cancelled">{orderLabels.cancelled}</option></select></td></tr>)}</tbody></table></div>
+    {paying && <PaymentDialog scope="order" id={paying._id} suggestedMethod={paying.paymentMethod}
+      onClose={() => setPaying(null)}
+      onPaid={() => action(() => Promise.resolve(), 'Đã ghi nhận thanh toán đơn hàng')}/>}
+  </>;
 }
 
 function Reservations({ data, action }) {
