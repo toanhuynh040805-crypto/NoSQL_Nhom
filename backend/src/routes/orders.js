@@ -5,6 +5,8 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 import { Food } from '../models/Food.js';
 import { Order } from '../models/Order.js';
 import { DiningTable } from '../models/DiningTable.js';
+import { TableSession } from '../models/TableSession.js';
+import { Reservation } from '../models/Reservation.js';
 import { Promotion } from '../models/Promotion.js';
 import { User } from '../models/User.js';
 import { cartOwner, clearCart, readCart } from '../services/cart.js';
@@ -85,7 +87,20 @@ router.patch('/:id/cancel', requireAuth, asyncHandler(async (req, res) => {
   order.status = 'cancelled';
   order.statusHistory.push({ status: 'cancelled', changedAt: new Date() });
   await order.save();
-  if (order.tableNumber) await DiningTable.updateOne({ name: order.tableNumber }, { status: 'available' });
+  if (order.tableNumber) {
+    const hasSession = await TableSession.exists({ tableNumber: order.tableNumber, status: 'active' });
+    const hasOtherOrders = await Order.exists({
+      tableNumber: order.tableNumber, _id: { $ne: order._id },
+      status: { $nin: ['completed', 'cancelled'] }
+    });
+    if (!hasSession && !hasOtherOrders) {
+      const next = await Reservation.exists({
+        table: (await DiningTable.findOne({ name: order.tableNumber }).select('_id'))?._id,
+        status: 'confirmed', reservedAt: { $gte: new Date(Date.now() - 30 * 60 * 1000) }
+      });
+      await DiningTable.updateOne({ name: order.tableNumber }, { status: next ? 'reserved' : 'available' });
+    }
+  }
   res.json({ order });
 }));
 
@@ -106,13 +121,25 @@ router.patch('/:id/status', requireAuth, requireRole('admin', 'staff', 'kitchen'
   order.status = status;
   order.statusHistory.push({ status, changedAt: new Date() });
   await order.save();
-  if (['completed', 'cancelled'].includes(status) && order.tableNumber) {
-    await DiningTable.updateOne({ name: order.tableNumber }, { status: 'available' });
+  if (['completed', 'cancelled'].includes(status) && order.tableNumber && !order.tableSession) {
+    const hasSession = await TableSession.exists({ tableNumber: order.tableNumber, status: 'active' });
+    const hasOtherOrders = await Order.exists({
+      tableNumber: order.tableNumber, _id: { $ne: order._id },
+      status: { $nin: ['completed', 'cancelled'] }
+    });
+    if (!hasSession && !hasOtherOrders) {
+      const table = await DiningTable.findOne({ name: order.tableNumber }).select('_id');
+      const next = table && await Reservation.exists({
+        table: table._id, status: 'confirmed',
+        reservedAt: { $gte: new Date(Date.now() - 30 * 60 * 1000) }
+      });
+      await DiningTable.updateOne({ name: order.tableNumber }, { status: next ? 'reserved' : 'available' });
+    }
   }
-  if (status === 'completed') {
+  if (status === 'completed' && order.customer) {
     await User.updateOne({ _id: order.customer }, { $inc: { loyaltyPoints: Math.floor(order.totalAmount / 10000) } });
   }
-  await notifyUser(order.customer, {
+  if (order.customer) await notifyUser(order.customer, {
     type: 'order', title: 'Cập nhật đơn hàng',
     message: `Đơn ${order.orderCode} đã chuyển sang trạng thái ${status}`,
     link: '/orders'

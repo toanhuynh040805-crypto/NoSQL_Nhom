@@ -10,6 +10,7 @@ import { Reservation } from '../models/Reservation.js';
 import { Promotion } from '../models/Promotion.js';
 import { Notification } from '../models/Notification.js';
 import { InventoryItem } from '../models/InventoryItem.js';
+import { TableSession } from '../models/TableSession.js';
 import { clearGraphData, ensureGraphConstraints, recordOrderGraph, syncCatalogGraph } from '../services/graph.js';
 
 const catalog = [
@@ -64,7 +65,7 @@ async function seed() {
   await Promise.all([
     Order.deleteMany({}), Review.deleteMany({}), Food.deleteMany({}), Category.deleteMany({}),
     User.deleteMany({}), DiningTable.deleteMany({}), Reservation.deleteMany({}),
-    Promotion.deleteMany({}), Notification.deleteMany({}), InventoryItem.deleteMany({})
+    Promotion.deleteMany({}), Notification.deleteMany({}), InventoryItem.deleteMany({}), TableSession.deleteMany({})
   ]);
   await redis.flushDb();
 
