@@ -166,6 +166,8 @@ router.delete('/sessions/:id/lock', requireRole('admin', 'staff'), asyncHandler(
 
 router.post('/sessions/:id/orders', requireRole('admin', 'staff'), asyncHandler(async (req, res) => {
   const session = await getActiveSession(req.params.id);
+  if (session.paymentState === 'paid') throw new AppError(409, 'Bàn đã thanh toán, không thể gọi món thêm');
+  if (await redis.exists('payment:confirm:session:' + session._id)) throw new AppError(423, 'Thu ngân đang thanh toán');
   if (await redis.get(lockKey(String(session._id))) !== String(req.user._id)) {
     throw new AppError(423, 'Bạn cần giữ quyền thao tác bàn trước khi gọi món');
   }
@@ -234,6 +236,8 @@ router.patch('/orders/:id/items/:index', requireRole('admin', 'staff'), asyncHan
   if (!order || order.source !== 'staff' || !order.tableSession) throw new AppError(404, 'Không tìm thấy lượt gọi món của nhân viên');
   if (order.status !== 'confirmed') throw new AppError(409, 'Bếp đã bắt đầu xử lý, không được thay đổi món');
   const session = await getActiveSession(String(order.tableSession));
+  if (session.paymentState === 'paid') throw new AppError(409, 'Bàn đã thanh toán');
+  if (await redis.exists('payment:confirm:session:' + session._id)) throw new AppError(423, 'Thu ngân đang thanh toán');
   if (await redis.get(lockKey(String(session._id))) !== String(req.user._id)) {
     throw new AppError(423, 'Cần giữ quyền thao tác bàn để chỉnh món');
   }
@@ -281,6 +285,7 @@ router.patch('/sessions/:id/transfer', requireRole('admin', 'staff'), asyncHandl
     throw new AppError(423, 'Bạn phải giữ quyền thao tác bàn trước khi chuyển');
   }
   if (session.reservation) throw new AppError(409, 'Bàn nhận từ lịch đặt cần được quản lý xử lý trước khi chuyển');
+  if (session.paymentState === 'paid') throw new AppError(409, 'Không thể chuyển bàn sau thanh toán');
   const body = z.object({ destinationTableId: z.string().refine(isValidObjectId) }).parse(req.body);
   if (String(session.table) === body.destinationTableId) throw new AppError(400, 'Bàn đích trùng bàn hiện tại');
   const destination = await DiningTable.findById(body.destinationTableId);
