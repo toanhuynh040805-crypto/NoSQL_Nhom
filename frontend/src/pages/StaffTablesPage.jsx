@@ -270,9 +270,9 @@ export default function StaffTablesPage() {
                 <span>Đã gọi {orders.length} lượt</span>
               </div>
               <div className="staff-lock">
-                {lock ? <span><LockKeyhole size={17}/> {isOwner ? 'Bạn đang giữ quyền thao tác' : lock.ownerName + ' đang thao tác'} ({Math.ceil(lock.secondsLeft / 60)} phút)</span>
+                {sessionData.session.paymentState === 'paid' ? <span><CheckCircle2 size={17}/> Phiên bàn đã thanh toán</span> : lock ? <span><LockKeyhole size={17}/> {isOwner ? 'Bạn đang giữ quyền thao tác' : lock.ownerName + ' đang thao tác'} ({Math.ceil(lock.secondsLeft / 60)} phút)</span>
                   : <span><UnlockKeyhole size={17}/> Chưa có người giữ quyền gọi món</span>}
-                {canServe && (isOwner ? <div><button onClick={getLock} disabled={busy}>Gia hạn</button><button onClick={unlock} disabled={busy}>Trả quyền</button></div>
+                {canServe && sessionData.session.paymentState !== 'paid' && (isOwner ? <div><button onClick={getLock} disabled={busy}>Gia hạn</button><button onClick={unlock} disabled={busy}>Trả quyền</button></div>
                   : !lock && <button onClick={getLock} disabled={busy}>Giữ quyền 5 phút</button>)}
               </div>
               <div className="staff-section-head"><h3>Đơn món tại bàn</h3><strong>{money(sessionData.subtotal || 0)}</strong></div>
@@ -281,7 +281,7 @@ export default function StaffTablesPage() {
                 <span className={'staff-state ' + order.status}>{orderText[order.status] || order.status}</span>
                 <ul>{order.items.map((item, index) => <li key={index} className="staff-existing-item">
                   <span>{item.quantity}× {item.name}{item.note && <em> · {item.note}</em>}</span>
-                  {order.status === 'confirmed' && canServe && isOwner && <span className="staff-item-edit">
+                  {order.status === 'confirmed' && canServe && isOwner && sessionData.session.paymentState !== 'paid' && <span className="staff-item-edit">
                     <button title="Giảm số lượng (0 = hủy món)" disabled={busy} onClick={() => changeQuantity(order._id, index, item.quantity - 1)}><Minus size={12}/></button>
                     <button title="Tăng số lượng" disabled={busy || item.quantity >= 99} onClick={() => changeQuantity(order._id, index, item.quantity + 1)}><Plus size={12}/></button>
                   </span>}
@@ -292,7 +292,7 @@ export default function StaffTablesPage() {
 
                 </div>
               </article>) : <p className="staff-muted">Bàn chưa gọi món.</p>}</div>
-              {canServe && isOwner && <div className="staff-transfer">
+              {canServe && isOwner && sessionData.session.paymentState !== 'paid' && <div className="staff-transfer">
                 <h3>Chuyển bàn</h3><p>Chuyển toàn bộ lượt món và phiên phục vụ sang bàn trống phù hợp.</p>
                 <div><select value={destinationId} onChange={e => setDestinationId(e.target.value)}>
                   <option value="">Chọn bàn đích</option>
@@ -307,9 +307,10 @@ export default function StaffTablesPage() {
                 {payable.some(o => o.paymentStatus !== 'paid') && <button type="button" className="order-button" onClick={() => setPaymentOpen(true)} disabled={busy}>
                   <CreditCard size={16}/> Thu tiền toàn bộ hóa đơn · {money(payable.filter(o => o.paymentStatus !== 'paid').reduce((sum,o) => sum + o.totalAmount, 0))}
                 </button>}
+                {sessionData.session.paymentReceipt && <button className="secondary-button" onClick={() => setPaymentOpen(true)}>Xem phiếu thu đã thanh toán</button>}
                 <button className="order-button" onClick={closeTable} disabled={busy || !canClose}>Kết thúc phiên & trả bàn</button>
               </div>}
-              {canServe && <>
+              {canServe && sessionData.session.paymentState !== 'paid' && <>
                 <div className="staff-section-head"><h3><ChefHat size={18}/> Gọi thêm món</h3><span>{draftCount} món đang chọn</span></div>
                 <div className="staff-menu-search"><Search size={17}/><input placeholder="Tìm món trong thực đơn KLCN..." value={search} onChange={e => setSearch(e.target.value)}/></div>
                 <div className="staff-category-filter"><button className={category === 'all' ? 'active' : ''} onClick={() => setCategory('all')}>Tất cả</button>
