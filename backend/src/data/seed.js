@@ -170,7 +170,7 @@ async function seed() {
     table: tables[0]._id, areaPreference: 'Tầng 1', status: 'confirmed',
     statusHistory: [{ status: 'confirmed', changedBy: users[0]._id }]
   });
-  await DiningTable.updateOne({ _id: tables[0]._id }, { status: 'reserved' });
+  // Booking tomorrow remains visible in the calendar but does not hold the physical table today.
 
   console.log('Seed completed');
   console.log('Admin: admin@quanan.vn / 123456');
