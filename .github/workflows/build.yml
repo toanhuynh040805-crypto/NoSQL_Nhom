@@ -57,7 +57,7 @@ jobs:
           done
           cat /tmp/nosql-api.log
           exit 1
-      - name: Smoke test: waiter → kitchen → cashier → reservations
+      - name: Smoke test - waiter, kitchen, cashier, reservations
         run: node scripts/smoke-test.mjs
       - name: Report backend logs on failure
         if: failure()
