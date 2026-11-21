@@ -8,7 +8,8 @@
     "start": "node src/server.js",
     "seed": "node src/data/seed.js",
     "check": "node --check src/server.js",
-    "restore:menu": "node src/data/restore-menu.js"
+    "restore:menu": "node src/data/restore-menu.js",
+    "verify:databases": "node src/data/verify-databases.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
