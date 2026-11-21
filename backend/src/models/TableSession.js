@@ -17,6 +17,8 @@ const schema = new mongoose.Schema({
   closedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   closedAt: Date,
   status: { type: String, enum: ['active', 'closed'], default: 'active' },
+  paymentState: { type: String, enum: ['open', 'paid'], default: 'open' },
+  paymentReceipt: { type: mongoose.Schema.Types.ObjectId, ref: 'PaymentReceipt' },
   activity: { type: [logSchema], default: [] }
 }, { timestamps: true });
 
