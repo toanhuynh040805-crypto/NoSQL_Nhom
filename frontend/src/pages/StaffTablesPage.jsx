@@ -206,7 +206,7 @@ export default function StaffTablesPage() {
     return sum + (food?.price || 0) * item.quantity;
   }, 0);
   const lock = sessionData?.lock;
-  const isOwner = Boolean(lock && String(lock.ownerId) === String(user?._id));
+  const isOwner = Boolean(lock && String(lock.ownerId) === String(user?.id));
   const orders = sessionData?.orders || [];
   const payable = orders.filter(o => o.status !== 'cancelled');
   const canClose = payable.every(o => o.status === 'completed' && o.paymentStatus === 'paid');
