@@ -31,6 +31,7 @@
 - Trở lại nhân viên phục vụ: đánh dấu đã phục vụ.
 - Đăng nhập `thungan@quanan.vn`, chọn bàn -> xác nhận thu tiền -> kết thúc phiên -> sơ đồ bàn cập nhật.
 - Thử hai nhân viên nhận cùng bàn hoặc gọi món khi nhân viên khác giữ khóa: phải bị chặn.
+- Khi có phiên đang phục vụ, quản trị không thể tự đổi trạng thái bàn hoặc ngừng sử dụng bàn; thu ngân yêu cầu phục vụ trả quyền trước khi đóng phiên.
 
 ## Còn cần chuyển từ KLCN để đạt đầy đủ nghiệp vụ
 

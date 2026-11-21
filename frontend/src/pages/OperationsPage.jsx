@@ -1,6 +1,6 @@
 import { BarChart3, CalendarDays, ClipboardList, LayoutDashboard, PackageOpen, Percent, Table2, Tags, Utensils, UsersRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 import { api, money } from '../lib/api.js';
 
@@ -98,7 +98,7 @@ function Reservations({ data, action }) {
 
 function Tables({ data, user, action }) {
   const add = () => { const name = prompt('Tên bàn (ví dụ T1-A9):'); if (!name) return; const area = prompt('Khu vực:'); const capacity = Number(prompt('Sức chứa:', '4')); action(() => api('/api/tables', { method: 'POST', body: JSON.stringify({ name, area, capacity }) }), 'Đã thêm bàn'); };
-  return <><div className="toolbar">{user.role === 'admin' && <button className="primary-button compact-button" onClick={add}>+ Thêm bàn</button>}</div><div className="table-grid">{(data.tables || []).map(table => <article className={`table-card ${table.status}`} key={table._id}><Table2/><h3>{table.name}</h3><p>{table.area} · {table.capacity} chỗ</p><select value={table.status} onChange={e => action(() => api(`/api/tables/${table._id}`, { method: 'PUT', body: JSON.stringify({ status: e.target.value }) }), 'Đã cập nhật bàn')}>{Object.entries(tableLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></article>)}</div></>;
+  return <><div className="toolbar">{user.role === 'admin' && <button className="primary-button compact-button" onClick={add}>+ Thêm bàn</button>}</div><div className="table-grid">{(data.tables || []).map(table => <article className={`table-card ${table.status}`} key={table._id}><Table2/><h3>{table.name}</h3><p>{table.area} · {table.capacity} chỗ</p><p><b>{tableLabels[table.status]}</b></p><Link className="table-action" to="/staff/tables">Mở sơ đồ bàn và gọi món</Link></article>)}</div></>;
 }
 
 function Inventory({ data, user, action }) {

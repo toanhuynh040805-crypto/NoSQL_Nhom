@@ -217,6 +217,10 @@ router.post('/sessions/:id/orders', requireRole('admin', 'staff'), asyncHandler(
 
 router.patch('/sessions/:id/close', requireRole('admin', 'cashier'), asyncHandler(async (req, res) => {
   const session = await getActiveSession(req.params.id);
+  const lockedBy = await redis.get(lockKey(String(session._id)));
+  if (lockedBy && String(lockedBy) !== String(req.user._id)) {
+    throw new AppError(423, 'Cần yêu cầu nhân viên đang giữ bàn trả quyền trước khi thanh toán xong');
+  }
   const orders = await Order.find({ tableSession: session._id, status: { $ne: 'cancelled' } }).lean();
   if (orders.some(o => o.status !== 'completed')) throw new AppError(409, 'Còn món chưa hoàn tất phục vụ');
   if (orders.some(o => o.paymentStatus !== 'paid')) throw new AppError(409, 'Còn hóa đơn chưa thanh toán');

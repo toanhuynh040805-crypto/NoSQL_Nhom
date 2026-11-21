@@ -158,13 +158,15 @@ export default function StaffTablesPage() {
     });
   }, 'Đã xác nhận thanh toán');
 
-  const closeTable = () => runAction(async () => {
+  const closeTable = () => {
     if (!window.confirm('Kết thúc phiên và trả bàn sau khi tất cả món đã phục vụ, thanh toán?')) return;
+    return runAction(async () => {
     await api('/api/staff/sessions/' + activeSessionId + '/close', { method: 'PATCH' });
     setSessionData(null);
     setChosenId(null);
     setDraft({});
-  }, 'Đã kết thúc phiên phục vụ và cập nhật bàn');
+    }, 'Đã kết thúc phiên phục vụ và cập nhật bàn');
+  };
 
   const areaNames = [...new Set(tables.map(t => t.area))];
   const visibleTables = tables.filter(table => areas === 'all' || table.area === areas);
@@ -185,6 +187,9 @@ export default function StaffTablesPage() {
   const orders = sessionData?.orders || [];
   const payable = orders.filter(o => o.status !== 'cancelled');
   const canClose = payable.every(o => o.status === 'completed' && o.paymentStatus === 'paid');
+  if (!user && localStorage.getItem('token')) {
+    return <div className="page"><div className="empty">Đang xác thực tài khoản nhân viên...</div></div>;
+  }
   if (!permitted) return <Navigate to="/login" replace />;
 
   return <section className="staff-workspace">
