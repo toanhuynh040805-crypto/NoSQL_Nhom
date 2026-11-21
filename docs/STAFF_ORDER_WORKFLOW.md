@@ -9,7 +9,7 @@
 5. Chọn món, ghi chú, tăng giảm số lượng, gửi từng lượt order từ đúng bàn; MongoDB lưu snapshot giá tại lúc gọi. `clientRequestId` chống tạo trùng đơn khi gửi lại. Chỉnh/hủy số lượng dòng món chỉ được thực hiện trước khi bếp bắt đầu chế biến; có ưu tiên theo lượt món.
 6. Bếp tiếp nhận các order đã xác nhận trong màn hình `/kitchen` (đang polling 10 giây). Khi bếp báo sẵn sàng, phục vụ xác nhận đã mang ra.
 7. Thu ngân xác nhận đã thanh toán từng lượt; chỉ được kết thúc phiên khi toàn bộ lượt món không hủy đã phục vụ và thanh toán. Nếu còn đặt bàn đã xác nhận thì bàn trở lại trạng thái đặt, thay vì trả trống bừa bãi.
-8. Lưu nhật ký mở bàn, gọi món và đóng phiên ở `TableSession.activity`. Giữ nguyên đường gọi món cho khách hàng hiện có.
+8. Có chuyển bàn trống đủ chỗ (chuyển cả phiên và lịch sử đơn, kiểm tra lịch đặt gần nhất), không cho tự chuyển bàn đã nhận theo lịch đặt. Lưu nhật ký mở bàn, gọi món và đóng phiên ở `TableSession.activity`. Giữ nguyên đường gọi món cho khách hàng hiện có.
 
 ## Phân quyền
 
@@ -38,7 +38,7 @@
 - Session hóa các đơn do khách web/QR tạo để chia sẻ một phiên bàn duy nhất với phục vụ; mã QR an toàn gắn phiên bàn.
 - Realtime WebSocket/SignalR tương đương cho bếp, phục vụ, thu ngân và thông báo (thay thế polling).
 - Nhắc lịch tự động khi đến giờ/quá giờ; đã có kiểm tra trùng lịch và khung nhận bàn đặt ±30 phút, nhưng chưa có tác vụ nền gửi nhắc.
-- Tách, gộp, chuyển bàn với nhật ký, chặn gộp hai khách thành viên khác nhau, giữ tên thành viên khi tách.
+- Tách và gộp bàn với nhật ký, chặn gộp hai khách thành viên khác nhau, giữ tên thành viên khi tách (chuyển bàn thường đã được bổ sung).
 - Ưu tiên món ở cấp từng món và cho từng bộ phận bếp/nước (hiện đã có ưu tiên ở cấp lượt order).
 - Phiếu tạm tính, QR thanh toán, đặt cọc, trừ cọc, áp dụng điểm loyalty vào hóa đơn, chống thanh toán trùng.
 - Quản lý ca làm, khu vực phụ trách, GPS/check-in, phân quyền chi tiết; thống kê khách và báo cáo mở rộng.

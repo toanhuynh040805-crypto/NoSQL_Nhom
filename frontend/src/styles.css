@@ -126,3 +126,9 @@ footer{height:76px;border-top:1px solid var(--line);display:flex;align-items:cen
 .staff-priority{display:flex;align-items:center;gap:8px;font-weight:700;font-size:12px;margin-top:12px;color:#9b442b}
 .staff-priority input{width:16px;height:16px}
 .kitchen-urgent{display:inline-block;color:#d84930;font-size:11px;font-weight:800}
+
+.staff-transfer{border-top:1px dashed #dccfc1;padding-top:12px;margin-top:15px}
+.staff-transfer h3{font-size:15px;margin:3px 0 5px}.staff-transfer p,.staff-transfer small{font-size:11px;color:#837365}
+.staff-transfer>div{display:flex;gap:8px}.staff-transfer select{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px}
+.staff-transfer button{background:#ebf1e7;color:#315b39;border:1px solid #c1d2bb;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700}
+.staff-transfer button:disabled{opacity:.5}

@@ -274,6 +274,56 @@ router.patch('/orders/:id/items/:index', requireRole('admin', 'staff'), asyncHan
   res.json({ order: updated });
 }));
 
+// Transfer the entire table session and its order history, never copy/delete order lines.
+router.patch('/sessions/:id/transfer', requireRole('admin', 'staff'), asyncHandler(async (req, res) => {
+  const session = await getActiveSession(req.params.id);
+  if (await redis.get(lockKey(String(session._id))) !== String(req.user._id)) {
+    throw new AppError(423, 'Bạn phải giữ quyền thao tác bàn trước khi chuyển');
+  }
+  if (session.reservation) throw new AppError(409, 'Bàn nhận từ lịch đặt cần được quản lý xử lý trước khi chuyển');
+  const body = z.object({ destinationTableId: z.string().refine(isValidObjectId) }).parse(req.body);
+  if (String(session.table) === body.destinationTableId) throw new AppError(400, 'Bàn đích trùng bàn hiện tại');
+  const destination = await DiningTable.findById(body.destinationTableId);
+  if (!destination || destination.status !== 'available') throw new AppError(409, 'Bàn đích đang được sử dụng hoặc giữ chỗ');
+  if (destination.capacity < session.guestCount) throw new AppError(409, 'Bàn đích không đủ chỗ');
+  const due = await Reservation.exists({ table: destination._id, ...dueReservationFilter() });
+  if (due) throw new AppError(409, 'Bàn đích có lịch đặt trong vòng 30 phút');
+
+  const claimed = await DiningTable.findOneAndUpdate(
+    { _id: destination._id, status: 'available' },
+    { $set: { status: 'occupied' } }, { new: true }
+  );
+  if (!claimed) throw new AppError(409, 'Bàn đích vừa được người khác nhận');
+  const previousTableId = session.table;
+  const previousNumber = session.tableNumber;
+  let moved;
+  try {
+    moved = await TableSession.findOneAndUpdate(
+      { _id: session._id, status: 'active', table: previousTableId },
+      {
+        $set: { table: destination._id, tableNumber: destination.name },
+        $push: { activity: {
+          action: 'transfer', by: req.user._id,
+          detail: previousNumber + ' → ' + destination.name
+        } }
+      }, { new: true, runValidators: true }
+    );
+    if (!moved) throw new AppError(409, 'Phiên bàn đã thay đổi, vui lòng làm mới');
+    await Order.updateMany({ tableSession: session._id }, { $set: { tableNumber: destination.name } });
+  } catch (error) {
+    if (!moved) await DiningTable.updateOne(
+      { _id: destination._id, status: 'occupied' }, { $set: { status: 'available' } }
+    );
+    throw error.code === 11000 ? new AppError(409, 'Bàn đích đã có phiên khác') : error;
+  }
+  const nextAtOld = await Reservation.exists({ table: previousTableId, ...dueReservationFilter() });
+  await DiningTable.updateOne(
+    { _id: previousTableId, status: 'occupied' },
+    { $set: { status: nextAtOld ? 'reserved' : 'available' } }
+  );
+  res.json({ session: moved, previousTable: previousNumber, destination: destination.name });
+}));
+
 router.patch('/sessions/:id/close', requireRole('admin', 'cashier'), asyncHandler(async (req, res) => {
   const session = await getActiveSession(req.params.id);
   const lockedBy = await redis.get(lockKey(String(session._id)));

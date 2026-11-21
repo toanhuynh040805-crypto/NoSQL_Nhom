@@ -25,6 +25,7 @@ export default function StaffTablesPage() {
   const [foods, setFoods] = useState([]);
   const [areas, setAreas] = useState('all');
   const [chosenId, setChosenId] = useState(null);
+  const [destinationId, setDestinationId] = useState('');
   const [sessionData, setSessionData] = useState(null);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
@@ -71,6 +72,7 @@ export default function StaffTablesPage() {
 
   const choose = table => {
     setChosenId(table._id);
+    setDestinationId('');
     setDraft({});
     setError('');
     setSearch('');
@@ -168,6 +170,16 @@ export default function StaffTablesPage() {
       method: 'PATCH', body: JSON.stringify({ paymentStatus: 'paid' })
     });
   }, 'Đã xác nhận thanh toán');
+
+  const transferTable = () => runAction(async () => {
+    if (!destinationId) throw new Error('Hãy chọn bàn muốn chuyển đến');
+    await api('/api/staff/sessions/' + activeSessionId + '/transfer', {
+      method: 'PATCH', body: JSON.stringify({ destinationTableId: destinationId })
+    });
+    setChosenId(destinationId);
+    setDestinationId('');
+    setDraft({});
+  }, 'Đã chuyển bàn cùng toàn bộ lịch sử món');
 
   const closeTable = () => {
     if (!window.confirm('Kết thúc phiên và trả bàn sau khi tất cả món đã phục vụ, thanh toán?')) return;
@@ -282,6 +294,16 @@ export default function StaffTablesPage() {
                   {order.paymentStatus !== 'paid' && canCashier && order.status === 'completed' && <button onClick={() => payment(order._id)} disabled={busy}><CreditCard size={15}/> Xác nhận thu tiền</button>}
                 </div>
               </article>) : <p className="staff-muted">Bàn chưa gọi món.</p>}</div>
+              {canServe && isOwner && <div className="staff-transfer">
+                <h3>Chuyển bàn</h3><p>Chuyển toàn bộ lượt món và phiên phục vụ sang bàn trống phù hợp.</p>
+                <div><select value={destinationId} onChange={e => setDestinationId(e.target.value)}>
+                  <option value="">Chọn bàn đích</option>
+                  {tables.filter(t => t._id !== selected._id && t.status === 'available' && t.capacity >= sessionData.session.guestCount)
+                    .map(t => <option key={t._id} value={t._id}>{t.name} · {t.area} · {t.capacity} chỗ</option>)}
+                </select>
+                <button onClick={transferTable} disabled={busy || !destinationId || Boolean(sessionData.session.reservation)}>Chuyển bàn</button></div>
+                {sessionData.session.reservation && <small>Bàn thuộc lịch đặt đã nhận: không tự chuyển để tránh sai thông tin đặt bàn.</small>}
+              </div>}
               {canCashier && <div className="staff-close"><p>{canClose ? 'Đã hoàn tất phục vụ và thanh toán các đơn.' : 'Chưa thể trả bàn: còn đơn chưa phục vụ hoặc chưa thanh toán.'}</p>
                 <button className="order-button" onClick={closeTable} disabled={busy || !canClose}>Kết thúc phiên & trả bàn</button></div>}
               {canServe && <>
