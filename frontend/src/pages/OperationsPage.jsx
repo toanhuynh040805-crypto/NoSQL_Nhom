@@ -1,4 +1,4 @@
-import { BarChart3, CalendarDays, ClipboardList, LayoutDashboard, PackageOpen, Percent, Table2, Tags, Utensils, UsersRound } from 'lucide-react';
+import { BarChart3, CalendarDays, ClipboardList, LayoutDashboard, PackageOpen, Percent, Table2, Tags, Utensils, UsersRound, Database, HardDrive, Network } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
@@ -20,7 +20,8 @@ const tabConfig = [
   ['categories', 'Danh mục', Tags, ['admin']],
   ['users', 'Người dùng', UsersRound, ['admin']],
   ['promotions', 'Khuyến mãi', Percent, ['admin']],
-  ['reports', 'Báo cáo', BarChart3, ['admin', 'cashier']]
+  ['reports', 'Báo cáo', BarChart3, ['admin', 'cashier']],
+  ['nosql', 'CSDL NoSQL', Database, ['admin']]
 ];
 
 export default function OperationsPage() {
@@ -53,6 +54,7 @@ export default function OperationsPage() {
       if (activeTab === 'users') setData(await api('/api/admin/users'));
       if (activeTab === 'promotions') setData(await api('/api/promotions'));
       if (activeTab === 'reports') setData(await api('/api/admin/reports'));
+      if (activeTab === 'nosql') setData(await api('/api/nosql/overview'));
     } catch (error) { notify(error.message); } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [activeTab, user]);
@@ -83,6 +85,7 @@ function TabContent({ tab, data, user, action }) {
   if (tab === 'users') return <Users data={data} action={action}/>;
   if (tab === 'promotions') return <Promotions data={data} action={action}/>;
   if (tab === 'reports') return <Reports data={data}/>;
+  if (tab === 'nosql') return <NoSQLOverview data={data}/>;
 }
 
 function Overview({ data }) {
@@ -142,3 +145,37 @@ function Reports({ data }) {
   return <><div className="stat-grid operations-stats"><div><BarChart3/><span>Doanh thu</span><strong>{money(data.summary?.revenue || 0)}</strong></div><div><ClipboardList/><span>Số đơn</span><strong>{data.summary?.orders || 0}</strong></div><div><Utensils/><span>Trung bình/đơn</span><strong>{money(data.summary?.averageOrder || 0)}</strong></div></div><div className="report-grid"><div className="admin-table-wrap"><h2>Món bán chạy</h2><table><thead><tr><th>Món</th><th>Số lượng</th><th>Doanh thu</th></tr></thead><tbody>{(data.topFoods || []).map(item => <tr key={item._id}><td>{item.name}</td><td>{item.quantity}</td><td>{money(item.revenue)}</td></tr>)}</tbody></table></div><div className="admin-table-wrap"><h2>Doanh thu theo ngày</h2><table><thead><tr><th>Ngày</th><th>Đơn</th><th>Doanh thu</th></tr></thead><tbody>{(data.daily || []).map(item => <tr key={item._id}><td>{item._id}</td><td>{item.orders}</td><td>{money(item.revenue)}</td></tr>)}</tbody></table></div></div></>;
 }
 
+
+function NoSQLOverview({ data }) {
+  const total = values => (values || []).reduce((sum, item) => sum + item.count, 0);
+  return <div className="nosql-console">
+    <p className="nosql-note">Dữ liệu được đọc trực tiếp từ ba hệ quản trị đang chạy, không phải số liệu giả lập.
+      Chỉ quản trị viên được xem trang này. Không hiển thị mật khẩu hoặc thông tin cá nhân.</p>
+    <div className="nosql-grid">
+      <article className="nosql-database"><div className="nosql-header"><Database size={26}/><div><h2>MongoDB</h2><p>Document · localhost:27017</p></div></div>
+        <strong>{total(data.mongodb?.collections)} tài liệu</strong>
+        <p>Database: <code>{data.mongodb?.database || 'restaurant_nosql'}</code></p>
+        <div className="nosql-rows">{(data.mongodb?.collections || []).map(item => <p key={item.name}><code>{item.name}</code><b>{item.count}</b></p>)}</div>
+        <small>Code: backend/src/models/ · backend/src/config/database.js</small>
+      </article>
+      <article className="nosql-database"><div className="nosql-header"><HardDrive size={26}/><div><h2>Redis</h2><p>Key-value · localhost:6379</p></div></div>
+        <strong>{data.redis?.leaderboardItems ?? 0} món trong bảng xếp hạng</strong>
+        <div className="nosql-rows">
+          <p><code>cart:*</code><b>{data.redis?.cartKeys ?? 0} key</b></p>
+          <p><code>table:lock:*</code><b>{data.redis?.tableLockKeys ?? 0} key</b></p>
+          <p><code>token:block:*</code><b>{data.redis?.revokedTokenKeys ?? 0} key</b></p>
+          <p><code>menu:categories TTL</code><b>{data.redis?.menuCacheTtlSeconds ?? '-'} giây</b></p>
+        </div><small>Code: backend/src/services/cart.js · cache.js · config/database.js</small>
+      </article>
+      <article className="nosql-database"><div className="nosql-header"><Network size={26}/><div><h2>Neo4j</h2><p>Graph · localhost:7474</p></div></div>
+        <strong>{(data.neo4j?.nodes || []).reduce((s,x)=>s+x.count,0)} node</strong>
+        <div className="nosql-rows">{(data.neo4j?.nodes || []).map(item => <p key={item.name}><code>{item.name}</code><b>{item.count}</b></p>)}</div>
+        <h3>Quan hệ</h3><div className="nosql-rows">{(data.neo4j?.relationships || []).map(item => <p key={item.name}><code>{item.name}</code><b>{item.count}</b></p>)}</div>
+        <small>Code: backend/src/services/graph.js · config/database.js</small>
+      </article>
+    </div>
+    <p className="nosql-note">Bạn có thể mở <a href="http://localhost:7474" target="_blank" rel="noreferrer">Neo4j Browser</a>,
+      MongoDB Compass tại mongodb://localhost:27017 hoặc Redis CLI để xem trực tiếp. Số lượng key Redis thay đổi
+      theo thời gian và số lượt thao tác. Kiểm tra lúc: {data.checkedAt ? new Date(data.checkedAt).toLocaleString('vi-VN') : '—'}.</p>
+  </div>;
+}
