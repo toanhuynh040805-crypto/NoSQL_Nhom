@@ -22,6 +22,8 @@ jobs:
         run: find backend/src -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Verify VietQR beneficiary and CRC
         run: node --test scripts/payment-bank.test.mjs
+      - name: Validate KLCN menu images and source catalog
+        run: node --test scripts/menu-catalog.test.mjs
       - name: Build frontend
         run: npm run build
 
@@ -49,6 +51,8 @@ jobs:
             sleep 6
           done
           test "$ready" -eq 1
+      - name: Recover missing catalog without resetting existing data
+        run: npm run restore:menu
       - name: Start API for integration test
         shell: bash
         run: |

@@ -161,3 +161,11 @@ footer{height:76px;border-top:1px solid var(--line);display:flex;align-items:cen
 .payment-done p{font-size:12px;margin:5px 0 0}
 .staff-close .order-button + .order-button{margin-top:9px}
 @media(max-width:620px){.payment-modal{padding:16px}.payment-modal-header h2{font-size:22px}.payment-bank-fields p span{flex:0 0 100%}.payment-bank-fields b{min-width:100px}.payment-qr img{width:220px;height:220px}}
+
+/* Distinguish truly empty MongoDB catalogs from API connectivity failures. */
+.menu-data-warning{display:flex;flex-wrap:wrap;align-items:center;gap:10px;border:1px solid #edc39f;border-radius:12px;background:#fff8ed;color:#905326;padding:12px 14px;margin-bottom:14px;font-size:13px}
+.menu-data-warning span{flex:1}.menu-data-warning button{display:flex;align-items:center;gap:6px;border:1px solid #e0bf8e;border-radius:8px;padding:7px 10px;color:#905326;background:white}
+.menu-empty-diagnostic{display:flex;align-items:center;flex-direction:column;text-align:center;justify-content:center;gap:10px;min-height:215px;border:1px dashed #e5d9c5;border-radius:18px;padding:30px;background:#fffefa;color:#716153}
+.menu-empty-diagnostic>svg{color:#b05d35}.menu-empty-diagnostic h3{font-size:20px;color:#41382d;margin:0}.menu-empty-diagnostic p{font-size:13px;max-width:700px;margin:0;line-height:1.6}
+.menu-empty-diagnostic code{background:#ede7df;color:#493f37;border-radius:5px;padding:3px 5px}
+.menu-empty-diagnostic .secondary-button{margin-top:8px}

@@ -315,6 +315,7 @@ export default function StaffTablesPage() {
                 <div className="staff-menu-search"><Search size={17}/><input placeholder="Tìm món trong thực đơn KLCN..." value={search} onChange={e => setSearch(e.target.value)}/></div>
                 <div className="staff-category-filter"><button className={category === 'all' ? 'active' : ''} onClick={() => setCategory('all')}>Tất cả</button>
                   {categories.map(c => <button key={c.id} className={category === c.id ? 'active' : ''} onClick={() => setCategory(c.id)}>{c.name}</button>)}</div>
+                {foods.length === 0 && <p className="staff-error">Thực đơn chưa có dữ liệu. Quản trị viên cần chạy npm run restore:menu rồi mở lại trang.</p>}
                 <div className="staff-menu-grid">{filteredFoods.map(food => <article key={food._id} className="staff-menu-food">
                   <img src={food.imageUrl || '/placeholder-food.svg'} alt={food.name} loading="lazy"/>
                   <div><h4>{food.name}</h4><strong>{money(food.price)}</strong>

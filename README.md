@@ -93,6 +93,15 @@ Tài khoản mẫu sau khi seed:
 | Bếp | `bep@quanan.vn` | `123456` |
 | Thu ngân | `thungan@quanan.vn` | `123456` |
 
+## Khi website không hiển thị thực đơn
+
+- API `/api/foods?limit=50` phải có `foods`; `/api/categories` phải trả về các danh mục.
+- Nếu trả mảng trống, dữ liệu món ăn trong **MongoDB của máy đang chạy** chưa có. Khi backend khởi động mà collection món **hoàn toàn trống**, ứng dụng tự tạo 37 món KLCN và 7 danh mục (không sửa món đã có).
+- Để khôi phục an toàn cả những món thiếu trong DB mà không xóa tài khoản, đơn hàng, phiếu thu và các phiên bàn, chạy **`npm run restore:menu`** từ thư mục dự án rồi tải lại web.
+- **Không dùng `npm run seed` để sửa lỗi mất món** nếu muốn giữ dữ liệu hiện có: đây là lệnh reset demo, xóa dữ liệu hoạt động.
+- Nếu API báo lỗi kết nối, hãy kiểm tra Docker Desktop, `docker compose ps`, terminal backend, và `http://localhost:5000/api/health`. Trên Vite, `/api` và `/images` được chuyển tiếp tới backend cổng 5000.
+- Tên và ảnh món lấy từ bộ dữ liệu KLCN lưu trong `backend/src/data/menuCatalog.js`; ảnh tương ứng nằm trong `backend/public/images/menu`.
+
 ## Luồng dữ liệu đặt món
 
 1. Khách chọn món; API lưu từng mục vào hash Redis `cart:user:<id>` hoặc `cart:guest:<id>`.
