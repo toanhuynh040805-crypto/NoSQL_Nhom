@@ -9,17 +9,17 @@ import { clearGraphData, ensureGraphConstraints, recordOrderGraph, syncCatalogGr
 
 const catalog = [
   { category: 'khai-vi', name: 'Gỏi ngó sen tôm thịt', description: 'Ngó sen giòn, tôm thịt và rau thơm', price: 65000, unit: 'Đĩa', image: 1, tags: ['thanh mát', 'tôm'] },
-  { category: 'khai-vi', name: 'Chả giò hải sản', description: 'Chả giò chiên giòn dùng kèm rau sống', price: 72000, unit: 'Đĩa', image: 2, tags: ['chiên giòn', 'hải sản'] },
-  { category: 'khai-vi', name: 'Súp cua trứng bắc thảo', description: 'Súp cua sánh mịn, thơm tiêu và ngò', price: 52000, unit: 'Chén', image: 3, tags: ['súp', 'cua'] },
-  { category: 'mon-chinh', name: 'Phở bò đặc biệt', description: 'Phở truyền thống với nước dùng hầm xương', price: 65000, unit: 'Tô', image: 4, tags: ['bò', 'truyền thống'] },
-  { category: 'mon-chinh', name: 'Cơm chiên Dương Châu', description: 'Cơm chiên hạt vàng, tôm, trứng và xá xíu', price: 75000, unit: 'Đĩa', image: 5, tags: ['cơm', 'tôm'] },
-  { category: 'mon-chinh', name: 'Bò lúc lắc khoai tây', description: 'Thăn bò áp chảo và khoai tây chiên', price: 125000, unit: 'Phần', image: 6, tags: ['bò', 'áp chảo'] },
-  { category: 'mon-chinh', name: 'Cá diêu hồng sốt xoài', description: 'Cá chiên giòn phủ sốt xoài chua ngọt', price: 180000, unit: 'Con', image: 7, tags: ['cá', 'chua ngọt'] },
-  { category: 'mon-chinh', name: 'Lẩu Thái hải sản', description: 'Nước lẩu chua cay cùng hải sản tươi', price: 295000, unit: 'Nồi', image: 8, tags: ['lẩu', 'hải sản', 'cay'] },
-  { category: 'do-uong', name: 'Trà đá thanh nhiệt', description: 'Trà đá mát lạnh giải khát', price: 5000, unit: 'Ly', image: 9, tags: ['trà', 'lạnh'] },
-  { category: 'do-uong', name: 'Trà đào cam sả', description: 'Trà đào thơm dịu cùng cam và sả', price: 39000, unit: 'Ly', image: 10, tags: ['trà', 'trái cây'] },
-  { category: 'do-uong', name: 'Nước ép dưa hấu', description: 'Dưa hấu ép nguyên chất', price: 35000, unit: 'Ly', image: 11, tags: ['nước ép', 'trái cây'] },
-  { category: 'trang-mieng', name: 'Chè khúc bạch', description: 'Khúc bạch mềm, nhãn và hạnh nhân', price: 38000, unit: 'Chén', image: 12, tags: ['chè', 'ngọt'] }
+  { category: 'mon-chinh', name: 'Cơm chiên Dương Châu', description: 'Cơm chiên hạt vàng, tôm, trứng và xá xíu', price: 75000, unit: 'Đĩa', image: 2, tags: ['cơm', 'tôm'] },
+  { category: 'do-uong', name: 'Trà đá thanh nhiệt', description: 'Trà đá mát lạnh giải khát', price: 5000, unit: 'Ly', image: 3, tags: ['trà', 'lạnh'] },
+  { category: 'do-them', name: 'Khăn lạnh', description: 'Khăn lạnh dùng tại bàn', price: 4000, unit: 'Cái', image: 4, tags: ['khăn lạnh'] },
+  { category: 'lau-bo', name: 'Lẩu bò 2-3 người (Thường)', description: 'Nồi lẩu bò phần thường dành cho 2-3 người', price: 220000, unit: 'Nồi', image: 5, tags: ['lẩu bò', '2-3 người'] },
+  { category: 'lau-bo', name: 'Lẩu bò 2-3 người (Đặc biệt)', description: 'Nồi lẩu bò phần đặc biệt dành cho 2-3 người', price: 280000, unit: 'Nồi', image: 6, tags: ['lẩu bò', '2-3 người', 'đặc biệt'] },
+  { category: 'lau-bo', name: 'Lẩu bò 4-5 người (Thường)', description: 'Nồi lẩu bò phần thường dành cho 4-5 người', price: 330000, unit: 'Nồi', image: 7, tags: ['lẩu bò', '4-5 người'] },
+  { category: 'lau-bo', name: 'Lẩu bò 4-5 người (Đặc biệt)', description: 'Nồi lẩu bò phần đặc biệt dành cho 4-5 người', price: 390000, unit: 'Nồi', image: 8, tags: ['lẩu bò', '4-5 người', 'đặc biệt'] },
+  { category: 'lau-bo', name: 'Lẩu bò 6-8 người (Thường)', description: 'Nồi lẩu bò phần thường dành cho 6-8 người', price: 440000, unit: 'Nồi', image: 9, tags: ['lẩu bò', '6-8 người'] },
+  { category: 'lau-bo', name: 'Lẩu bò 6-8 người (Đặc biệt)', description: 'Nồi lẩu bò phần đặc biệt dành cho 6-8 người', price: 500000, unit: 'Nồi', image: 10, tags: ['lẩu bò', '6-8 người', 'đặc biệt'] },
+  { category: 'mon-nham', name: 'Bò viên chiên', description: 'Bò viên chiên nóng dùng kèm tương ớt', price: 60000, unit: 'Phần', image: 11, tags: ['bò viên', 'chiên'] },
+  { category: 'mon-nham', name: 'Chân gà sả tắc', description: 'Chân gà giòn thấm vị sả tắc', price: 99000, unit: 'Đĩa', image: 12, tags: ['chân gà', 'sả tắc'] }
 ];
 
 async function seed() {
@@ -32,8 +32,10 @@ async function seed() {
   const categories = await Category.insertMany([
     { name: 'Khai vị', slug: 'khai-vi', type: 'food', description: 'Món nhẹ mở đầu bữa ăn' },
     { name: 'Món chính', slug: 'mon-chinh', type: 'food', description: 'Các món ăn chính của quán' },
-    { name: 'Đồ uống', slug: 'do-uong', type: 'drink', description: 'Thức uống giải khát' },
-    { name: 'Tráng miệng', slug: 'trang-mieng', type: 'food', description: 'Món ngọt kết thúc bữa ăn' }
+    { name: 'Lẩu bò', slug: 'lau-bo', type: 'food', description: 'Các phần lẩu bò theo số lượng khách' },
+    { name: 'Món nhắm', slug: 'mon-nham', type: 'food', description: 'Món ăn kèm và món nhắm' },
+    { name: 'Đồ thêm', slug: 'do-them', type: 'food', description: 'Các món và vật dụng gọi thêm' },
+    { name: 'Đồ uống', slug: 'do-uong', type: 'drink', description: 'Thức uống giải khát' }
   ]);
   const categoryMap = new Map(categories.map(category => [category.slug, category]));
   const foods = await Food.insertMany(catalog.map((item, index) => ({
