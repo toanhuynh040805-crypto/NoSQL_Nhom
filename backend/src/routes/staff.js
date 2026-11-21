@@ -140,6 +140,7 @@ router.post('/tables/:id/open', requireRole('admin', 'staff'), asyncHandler(asyn
 
 router.post('/sessions/:id/lock', requireRole('admin', 'staff'), asyncHandler(async (req, res) => {
   const session = await getActiveSession(req.params.id);
+  if (session.paymentState === 'paid') throw new AppError(409, 'Phiên bàn đã thanh toán, không thể tiếp tục gọi món');
   const key = lockKey(String(session._id));
   const userId = String(req.user._id);
   const acquired = await redis.set(key, userId, { NX: true, EX: lockSeconds });
