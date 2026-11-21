@@ -23,6 +23,8 @@ export default function OrdersPage() {
         <ul>{order.items.map((item, index) => <li key={index}><span>{item.quantity} × {item.name}</span><b>{money(item.price * item.quantity)}</b>{order.status === 'completed' && <button className="review-button" onClick={async () => { const rating = Number(prompt(`Đánh giá ${item.name} từ 1 đến 5:`, '5')); if (rating < 1 || rating > 5) return; const comment = prompt('Nhận xét của bạn:', '') || ''; try { await api('/api/reviews', { method: 'POST', body: JSON.stringify({ foodId: item.food, orderId: order._id, rating, comment }) }); notify('Cảm ơn bạn đã đánh giá'); } catch (error) { notify(error.message); } }}>Đánh giá</button>}</li>)}</ul>
         {order.discountAmount > 0 && <div className="order-discount"><span>Khuyến mãi {order.promotionCode}</span><b>-{money(order.discountAmount)}</b></div>}
         <div className="order-footer"><span>{new Date(order.createdAt).toLocaleString('vi-VN')} · {order.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}</span><strong>{money(order.totalAmount ?? order.subtotal)}</strong></div>
+        {order.paymentStatus === 'paid' && order.paymentReceipt &&
+          <button type="button" className="table-action" onClick={() => setPayOrder(order)}>Xem phiếu thu</button>}
         {order.paymentStatus !== 'paid' && order.paymentMethod === 'bank-transfer' && order.status !== 'cancelled' &&
           <button className="table-action" type="button" onClick={() => setPayOrder(order)}>Xem QR chuyển khoản BIDV</button>}
         {order.paymentStatus !== 'paid' && order.paymentMethod !== 'bank-transfer' && order.status !== 'cancelled' &&
