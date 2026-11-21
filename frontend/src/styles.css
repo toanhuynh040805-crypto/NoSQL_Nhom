@@ -170,3 +170,20 @@ footer{height:76px;border-top:1px solid var(--line);display:flex;align-items:cen
 .menu-empty-diagnostic>svg{color:#b05d35}.menu-empty-diagnostic h3{font-size:20px;color:#41382d;margin:0}.menu-empty-diagnostic p{font-size:13px;max-width:700px;margin:0;line-height:1.6}
 .menu-empty-diagnostic code{background:#ede7df;color:#493f37;border-radius:5px;padding:3px 5px}
 .menu-empty-diagnostic .secondary-button{margin-top:8px}
+
+/* Read-only NoSQL explorer for the course defense: live database counts. */
+.nosql-console{display:flex;flex-direction:column;gap:16px}
+.nosql-note{font-size:13px;color:#796e62;line-height:1.7;margin:0}
+.nosql-note a{color:var(--red);text-decoration:underline}
+.nosql-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.nosql-database{background:#fffdf8;border:1px solid var(--line);border-radius:16px;padding:20px;min-width:0;box-shadow:0 4px 14px #44331b0b}
+.nosql-header{display:flex;align-items:center;gap:12px;color:#3e6446}
+.nosql-header h2{margin:0;color:#2e2c28;font-size:21px}.nosql-header p{margin:3px 0;color:#7d7162;font-size:12px}
+.nosql-database>strong{display:block;margin:20px 0 10px;font-size:17px}
+.nosql-database>p,.nosql-database>small{font-size:12px;color:#786d60}
+.nosql-database h3{font-size:15px;margin:16px 0 8px}
+.nosql-rows{border-top:1px solid #e9dfcf;margin:9px 0 15px}
+.nosql-rows p{display:flex;justify-content:space-between;gap:12px;margin:0;padding:9px 0;border-bottom:1px solid #f0e9df}
+.nosql-rows code{overflow-wrap:anywhere;color:#865038;font-size:12px}
+.nosql-rows b{white-space:nowrap;font-size:12px}
+@media(max-width:1150px){.nosql-grid{grid-template-columns:1fr}}

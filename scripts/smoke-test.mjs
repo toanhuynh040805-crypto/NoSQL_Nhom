@@ -26,6 +26,19 @@ const kitchen = await login('bep@quanan.vn');
 const admin = await login('admin@quanan.vn');
 const customer = await login('khach@quanan.vn');
 const st = staff.token, ct = cashier.token, kt = kitchen.token, at = admin.token, ut = customer.token;
+const overview = await request('GET', '/api/nosql/overview', at);
+assert.equal(overview.mongodb.database, 'restaurant_nosql');
+assert.ok(overview.mongodb.collections.some(item => item.name === 'foods' && item.count >= 37));
+for (const node of ['Customer', 'Food', 'Category']) {
+  assert.ok(overview.neo4j.nodes.some(item => item.name === node && item.count > 0),
+    'MongoDB seed must sync Neo4j ' + node + ' nodes');
+}
+for (const edge of ['ORDERED', 'REVIEWED', 'BELONGS_TO']) {
+  assert.ok(overview.neo4j.relationships.some(item => item.name === edge && item.count > 0),
+    'Seed should include Neo4j relationship: ' + edge);
+}
+await request('GET', '/api/nosql/overview', st, undefined, 403);
+await request('GET', '/api/nosql/overview', ut, undefined, 403);
 
 await request('GET', '/api/staff/tables', ut, undefined, 403);
 await request('GET', '/api/staff/tables', kt, undefined, 403);

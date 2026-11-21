@@ -143,6 +143,44 @@ Tài khoản mẫu sau khi seed:
 
 **Quan trọng:** QR chỉ là hướng dẫn chuyển tiền, **chưa tích hợp đối soát ngân hàng tự động**, thu ngân cần xác minh giao dịch thực tế.
 
+## Hồ sơ nộp môn NoSQL và nơi xem trực tiếp ba database
+
+Bộ hồ sơ nộp cuối kỳ đã được bổ sung theo yêu cầu giảng viên:
+
+| Mục | File |
+|---|---|
+| Yêu cầu phần mềm | [SRS](docs/SRS.md) |
+| Thiết kế phần mềm | [SDS](docs/SDS.md) |
+| Database Model MongoDB/Redis/Neo4j | [Database Model](docs/DATABASE_MODEL.md) |
+| Use Case, DFD cấp 0/1, Activity, Sequence và ERD | [Sơ đồ](docs/DIAGRAMS.md) |
+| Scripts, JSON mẫu của từng CSDL | [MongoDB](database/mongodb), [Redis](database/redis), [Neo4j](database/neo4j) |
+| Test case và bằng chứng | [Test Cases](docs/TEST_CASES.md), [Bằng chứng cần chụp](docs/EVIDENCE_CHECKLIST.md) |
+| Báo cáo kết quả và hoạt động nhóm | [Báo cáo](docs/FINAL_REPORT.md), [Hoạt động nhóm](docs/GROUP_ACTIVITY.md) |
+| Đối chiếu đề giảng viên | [Checklist](docs/REQUIREMENTS_CHECKLIST.md) |
+| Chuẩn bị nộp | [Hướng dẫn nộp](docs/SUBMISSION_GUIDE.md) |
+| **Mở và chỉ ra MongoDB / Redis / Neo4j** | **[Hướng dẫn xem 3 cơ sở dữ liệu](docs/NO_SQL_RUNBOOK.md)** |
+
+**Ngay trên website:** đăng nhập tài khoản quản trị → **Vận hành → CSDL NoSQL**
+(đường dẫn `http://localhost:5173/operations?tab=nosql`) để xem số lượng tài liệu MongoDB, key/TTL Redis và node/quan hệ Neo4j đọc trực tiếp. Chỉ admin được xem.
+
+**Trong code:**
+- Docker khai báo ba máy chủ ở `docker-compose.yml`, cấu hình `.env.example`, kết nối `backend/src/config/database.js`.
+- MongoDB `backend/src/models/` và `routes/`, tên database `restaurant_nosql`, cổng 27017.
+- Redis `backend/src/services/cart.js`, `cache.js`, `routes/staff.js`, cổng 6379.
+- Neo4j `backend/src/services/graph.js`, `routes/recommendations.js`, Bolt cổng 7687, Browser cổng 7474.
+
+Kiểm tra môi trường phát triển bằng lệnh **chỉ đọc** (cần ba container đang hoạt động):
+```powershell
+npm run verify:databases
+npm run test:course
+```
+
+Sau khi backend chạy, muốn tự đo thời gian phản hồi HTTP của API danh mục:
+```powershell
+node scripts/benchmark-nosql.mjs
+```
+Lưu số liệu chạy thật vào báo cáo; không được coi số liệu minh họa là kết quả đo. Trong tài liệu hướng dẫn, Cassandra được nêu như lựa chọn phù hợp với log/time-series; phần yêu cầu chung không khẳng định bắt buộc dùng đủ bốn DBMS. Nhóm vẫn cần xác nhận với giảng viên cách diễn giải “ít nhất bốn loại dữ liệu” và nộp đủ minh chứng.
+
 ## Ngoài phạm vi bản đồ án hiện tại
 
 - Tích hợp cổng thanh toán thật và xử lý callback từ nhà cung cấp thanh toán.

@@ -26,6 +26,8 @@ jobs:
         run: node --test scripts/menu-catalog.test.mjs
       - name: Check employee role homepages
         run: node --test scripts/role-home.test.mjs
+      - name: Verify NoSQL course submission files
+        run: npm run test:course
       - name: Build frontend
         run: npm run build
 
@@ -55,6 +57,8 @@ jobs:
           test "$ready" -eq 1
       - name: Recover missing catalog without resetting existing data
         run: npm run restore:menu
+      - name: Inspect MongoDB Redis Neo4j after seed
+        run: npm run verify:databases
       - name: Start API for integration test
         shell: bash
         run: |

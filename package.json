@@ -8,6 +8,8 @@
     "dev:frontend": "npm run dev --prefix frontend",
     "seed": "npm run seed --prefix backend",
     "build": "npm run build --prefix frontend",
-    "restore:menu": "npm run restore:menu --prefix backend"
+    "restore:menu": "npm run restore:menu --prefix backend",
+    "verify:databases": "npm run verify:databases --prefix backend",
+    "test:course": "node --test scripts/course-artifacts.test.mjs"
   }
 }
