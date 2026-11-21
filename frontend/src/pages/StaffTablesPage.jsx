@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 import { api, money } from '../lib/api.js';
+import PaymentDialog from '../components/PaymentDialog.jsx';
 
 const statusText = {
   available: 'Trống', reserved: 'Đã đặt', occupied: 'Đang phục vụ',
@@ -27,6 +28,7 @@ export default function StaffTablesPage() {
   const [chosenId, setChosenId] = useState(null);
   const [destinationId, setDestinationId] = useState('');
   const [sessionData, setSessionData] = useState(null);
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [draft, setDraft] = useState({});
@@ -72,6 +74,7 @@ export default function StaffTablesPage() {
 
   const choose = table => {
     setChosenId(table._id);
+    setPaymentOpen(false);
     setDestinationId('');
     setDraft({});
     setError('');
@@ -165,11 +168,6 @@ export default function StaffTablesPage() {
     });
   }, 'Đã cập nhật trạng thái phục vụ');
 
-  const payment = orderId => runAction(async () => {
-    await api('/api/orders/' + orderId + '/payment', {
-      method: 'PATCH', body: JSON.stringify({ paymentStatus: 'paid' })
-    });
-  }, 'Đã xác nhận thanh toán');
 
   const transferTable = () => runAction(async () => {
     if (!destinationId) throw new Error('Hãy chọn bàn muốn chuyển đến');
@@ -291,7 +289,7 @@ export default function StaffTablesPage() {
                 <div className="staff-ticket-bottom"><b>{money(order.totalAmount)}</b><span>{order.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}</span></div>
                 <div className="staff-ticket-actions">
                   {order.status === 'ready' && canServe && <button onClick={() => updateOrder(order._id, 'completed')} disabled={busy}><CheckCircle2 size={15}/> Đã phục vụ</button>}
-                  {order.paymentStatus !== 'paid' && canCashier && order.status === 'completed' && <button onClick={() => payment(order._id)} disabled={busy}><CreditCard size={15}/> Xác nhận thu tiền</button>}
+
                 </div>
               </article>) : <p className="staff-muted">Bàn chưa gọi món.</p>}</div>
               {canServe && isOwner && <div className="staff-transfer">
@@ -304,8 +302,13 @@ export default function StaffTablesPage() {
                 <button onClick={transferTable} disabled={busy || !destinationId || Boolean(sessionData.session.reservation)}>Chuyển bàn</button></div>
                 {sessionData.session.reservation && <small>Bàn thuộc lịch đặt đã nhận: không tự chuyển để tránh sai thông tin đặt bàn.</small>}
               </div>}
-              {canCashier && <div className="staff-close"><p>{canClose ? 'Đã hoàn tất phục vụ và thanh toán các đơn.' : 'Chưa thể trả bàn: còn đơn chưa phục vụ hoặc chưa thanh toán.'}</p>
-                <button className="order-button" onClick={closeTable} disabled={busy || !canClose}>Kết thúc phiên & trả bàn</button></div>}
+              {canCashier && <div className="staff-close">
+                <p>{canClose ? 'Đã hoàn tất phục vụ và thanh toán các đơn.' : 'Chưa thể trả bàn: còn đơn chưa phục vụ hoặc chưa thanh toán.'}</p>
+                {payable.some(o => o.paymentStatus !== 'paid') && <button type="button" className="order-button" onClick={() => setPaymentOpen(true)} disabled={busy}>
+                  <CreditCard size={16}/> Thu tiền toàn bộ hóa đơn · {money(payable.filter(o => o.paymentStatus !== 'paid').reduce((sum,o) => sum + o.totalAmount, 0))}
+                </button>}
+                <button className="order-button" onClick={closeTable} disabled={busy || !canClose}>Kết thúc phiên & trả bàn</button>
+              </div>}
               {canServe && <>
                 <div className="staff-section-head"><h3><ChefHat size={18}/> Gọi thêm món</h3><span>{draftCount} món đang chọn</span></div>
                 <div className="staff-menu-search"><Search size={17}/><input placeholder="Tìm món trong thực đơn KLCN..." value={search} onChange={e => setSearch(e.target.value)}/></div>
@@ -325,5 +328,12 @@ export default function StaffTablesPage() {
         </>}
       </section>
     </div>
+    {paymentOpen && activeSessionId && <PaymentDialog scope="session" id={activeSessionId}
+      onClose={() => setPaymentOpen(false)}
+      onPaid={async () => {
+        await loadSession(activeSessionId);
+        await loadTables();
+        notify('Đã lập phiếu thu và ghi nhận thanh toán cho bàn');
+      }}/>}
   </section>;
 }
