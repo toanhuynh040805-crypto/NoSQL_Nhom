@@ -20,7 +20,7 @@ export default function MenuPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const params = new URLSearchParams({ limit: '30' });
+      const params = new URLSearchParams({ limit: '50' });
       if (category) params.set('category', category);
       if (search) params.set('search', search);
       setLoading(true);
