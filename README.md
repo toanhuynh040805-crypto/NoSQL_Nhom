@@ -43,16 +43,19 @@ Node.js/Express (5000)
 Yêu cầu: Node.js 20+, npm và Docker Desktop.
 
 ```bash
-# 1. Khởi động ba cơ sở dữ liệu
+# 1. Tạo file cấu hình trên Windows PowerShell
+Copy-Item .env.example .env
+
+# 2. Khởi động ba cơ sở dữ liệu
 docker compose up -d
 
-# 2. Cài thư viện
+# 3. Cài thư viện
 npm run install:all
 
-# 3. Tạo dữ liệu mẫu (chạy sau khi container đã sẵn sàng)
+# 4. Tạo dữ liệu mẫu (chạy sau khi container đã sẵn sàng)
 npm run seed
 
-# 4. Mở hai terminal
+# 5. Mở hai terminal trong VS Code
 npm run dev:backend
 npm run dev:frontend
 ```
