@@ -13,7 +13,7 @@ import { InventoryItem } from '../models/InventoryItem.js';
 import { TableSession } from '../models/TableSession.js';
 import { PaymentReceipt } from '../models/PaymentReceipt.js';
 import { catalog, categoryDefinitions } from './menuCatalog.js';
-import { clearGraphData, ensureGraphConstraints, recordOrderGraph, syncCatalogGraph } from '../services/graph.js';
+import { clearGraphData, ensureGraphConstraints, recordOrderGraph, recordReviewGraph, syncCatalogGraph } from '../services/graph.js';
 
 
 
@@ -114,6 +114,14 @@ async function seed() {
     }
   ]);
   await Promise.all(sampleOrders.map((order, index) => recordOrderGraph(users[index + 4], order)));
+  // Demonstrate REVIEWED, the third implemented Neo4j relationship type.
+  // Only part of the reset-only demo seed; never use on real restaurant data.
+  await Review.create({
+    customer: users[4]._id, food: foods[0]._id, order: sampleOrders[0]._id,
+    rating: 5, comment: 'Món ngon, sẽ quay lại.'
+  });
+  await Food.updateOne({ _id: foods[0]._id }, { ratingAverage: 5, ratingCount: 1 });
+  await recordReviewGraph(users[4].id, foods[0].id, 5);
 
   await Reservation.create({
     reservationCode: 'RS-DEMO-001', customer: users[4]._id, customerName: users[4].fullName,
