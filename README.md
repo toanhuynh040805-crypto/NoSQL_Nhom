@@ -116,10 +116,11 @@ Tài khoản mẫu sau khi seed:
 | `POST` | `/api/reviews` | Đánh giá món |
 | `GET` | `/api/admin/dashboard` | Thống kê quản trị |
 
-## Phạm vi giai đoạn tiếp theo
+## Ngoài phạm vi bản đồ án hiện tại
 
-- Bổ sung form quản lý món/danh mục trực tiếp trên giao diện admin.
-- Bổ sung giao diện đánh giá món sau khi đơn hoàn thành.
-- Viết kiểm thử API và dữ liệu mẫu nhiều khách hàng để minh họa gợi ý cộng tác rõ hơn.
+- Tích hợp cổng thanh toán thật và xử lý callback từ nhà cung cấp thanh toán.
+- Tích hợp đơn vị giao hàng, bản đồ và theo dõi tài xế theo thời gian thực.
+- Kết nối máy in bếp, máy in hóa đơn và hóa đơn điện tử theo môi trường triển khai thực tế.
+- Bổ sung kiểm thử tự động, giám sát hệ thống và quy trình sao lưu để triển khai production.
 - Chuẩn hóa báo cáo thực nghiệm: thời gian truy vấn, cache hit/miss, truy vấn Cypher và ảnh minh chứng ba CSDL.
 
