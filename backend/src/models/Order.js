@@ -26,6 +26,8 @@ const orderSchema = new mongoose.Schema({
   promotionCode: { type: String, trim: true, uppercase: true },
   paymentMethod: { type: String, enum: ['cash', 'bank-transfer', 'counter'], default: 'counter' },
   paymentStatus: { type: String, enum: ['pending', 'paid', 'refunded'], default: 'pending' },
+  paymentReceipt: { type: mongoose.Schema.Types.ObjectId, ref: 'PaymentReceipt' },
+  paidAt: Date,
   status: {
     type: String,
     enum: ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'],
