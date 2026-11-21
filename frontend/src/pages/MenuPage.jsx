@@ -72,7 +72,14 @@ export default function MenuPage() {
         <p>Xem thực đơn, chọn món và theo dõi đơn ngay trên website. Không cần chờ gọi nhân viên.</p>
         <div className="search-box"><Search size={20}/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Tìm lẩu bò, món nhắm, đồ uống..."/></div>
       </div>
-      <div className="hero-art"><div className="plate"><Utensils size={74}/></div><span className="leaf leaf-one">✦</span><span className="leaf leaf-two">❧</span></div>
+      <div className="hero-art">
+        <div className="plate" aria-label="Bếp Nhà">
+          <Utensils className="plate-utensils" size={70} aria-hidden="true"/>
+          <span className="plate-wordmark">BẾP NHÀ</span>
+        </div>
+        <span className="leaf leaf-one" aria-hidden="true">✦</span>
+        <span className="leaf leaf-two" aria-hidden="true">❧</span>
+      </div>
     </section>
 
     {recommended.length > 0 && !search && !category && <section className="section recommendations">
