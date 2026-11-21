@@ -122,12 +122,17 @@ Tài khoản mẫu sau khi seed:
 - Mỗi bàn chỉ có một phiên active; khóa quyền chỉnh sửa bằng Redis trong 5 phút.
 - Gọi món theo lượt (staff orders), bếp xử lý, phục vụ xác nhận đã mang món ra, thu ngân xác nhận thanh toán trước khi kết thúc phiên.
 - Hướng dẫn và phần KLCN còn thiếu: [docs/STAFF_ORDER_WORKFLOW.md](docs/STAFF_ORDER_WORKFLOW.md).
+- **Thanh toán tiền mặt hoặc chuyển khoản BIDV (VietQR)**: thu ngân mở hóa đơn chung của bàn, nhập tiền khách đưa/tiền thối hoặc xác nhận chuyển khoản sau khi tra cứu khoản tiền thực nhận; lưu `PaymentReceipt` và khóa gọi thêm sau khi thu tiền.
+- Khách đặt từ Web chọn tiền mặt hoặc chuyển khoản khi đặt món, xem QR trong **Đơn của tôi**; doanh thu báo cáo chỉ tính đơn đã thanh toán.
+- Xem chi tiết ngân hàng và các bước bảo đảm an toàn: [docs/PAYMENT_FLOW.md](docs/PAYMENT_FLOW.md).
+
+**Quan trọng:** QR chỉ là hướng dẫn chuyển tiền, **chưa tích hợp đối soát ngân hàng tự động**, thu ngân cần xác minh giao dịch thực tế.
 
 ## Ngoài phạm vi bản đồ án hiện tại
 
 - Tích hợp cổng thanh toán thật và xử lý callback từ nhà cung cấp thanh toán.
 - Tích hợp đơn vị giao hàng, bản đồ và theo dõi tài xế theo thời gian thực.
 - Kết nối máy in bếp, máy in hóa đơn và hóa đơn điện tử theo môi trường triển khai thực tế.
-- Bổ sung kiểm thử tự động, giám sát hệ thống và quy trình sao lưu để triển khai production.
+- Mở rộng kiểm thử tự động và giám sát hệ thống, sao lưu trước khi triển khai production.
 - Chuẩn hóa báo cáo thực nghiệm: thời gian truy vấn, cache hit/miss, truy vấn Cypher và ảnh minh chứng ba CSDL.
 
