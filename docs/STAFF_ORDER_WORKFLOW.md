@@ -6,7 +6,7 @@
 2. Hiển thị sơ đồ theo khu, màu trống/đặt/đang phục vụ, tổng số chỗ, lượng khách, lịch đặt đã xác nhận.
 3. Phục vụ nhận bàn thường hoặc bàn đặt đã xác nhận. Dùng MongoDB `table_sessions` và unique partial index để chống mở hai phiên hoạt động trên cùng một bàn.
 4. Redis quản lý quyền thao tác bàn 5 phút (`table:lock:<sessionId>`), có nhận, gia hạn, trả quyền; nhân viên khác được xem nhưng không được gửi món khi khóa còn hiệu lực.
-5. Chọn món, ghi chú, tăng giảm số lượng, gửi từng lượt order từ đúng bàn; MongoDB lưu snapshot giá tại lúc gọi. `clientRequestId` chống tạo trùng đơn khi gửi lại.
+5. Chọn món, ghi chú, tăng giảm số lượng, gửi từng lượt order từ đúng bàn; MongoDB lưu snapshot giá tại lúc gọi. `clientRequestId` chống tạo trùng đơn khi gửi lại. Chỉnh/hủy số lượng dòng món chỉ được thực hiện trước khi bếp bắt đầu chế biến; có ưu tiên theo lượt món.
 6. Bếp tiếp nhận các order đã xác nhận trong màn hình `/kitchen` (đang polling 10 giây). Khi bếp báo sẵn sàng, phục vụ xác nhận đã mang ra.
 7. Thu ngân xác nhận đã thanh toán từng lượt; chỉ được kết thúc phiên khi toàn bộ lượt món không hủy đã phục vụ và thanh toán. Nếu còn đặt bàn đã xác nhận thì bàn trở lại trạng thái đặt, thay vì trả trống bừa bãi.
 8. Lưu nhật ký mở bàn, gọi món và đóng phiên ở `TableSession.activity`. Giữ nguyên đường gọi món cho khách hàng hiện có.
@@ -39,7 +39,7 @@
 - Realtime WebSocket/SignalR tương đương cho bếp, phục vụ, thu ngân và thông báo (thay thế polling).
 - Nhận bàn thường có giữ lịch đặt 30 phút, tự động hóa đến giờ/quá giờ, chống xung đột đặt bàn.
 - Tách, gộp, chuyển bàn với nhật ký, chặn gộp hai khách thành viên khác nhau, giữ tên thành viên khi tách.
-- Ưu tiên món ở cấp từng món, sửa/hủy món khi chưa chế biến và đồng bộ bếp.
+- Ưu tiên món ở cấp từng món và cho từng bộ phận bếp/nước (hiện đã có ưu tiên ở cấp lượt order).
 - Phiếu tạm tính, QR thanh toán, đặt cọc, trừ cọc, áp dụng điểm loyalty vào hóa đơn, chống thanh toán trùng.
 - Quản lý ca làm, khu vực phụ trách, GPS/check-in, phân quyền chi tiết; thống kê khách và báo cáo mở rộng.
 - Audit logs bền vững, kiểm thử giao dịch cạnh tranh và stress tests, xử lý phục hồi khi đồng bộ Neo4j/Redis bị lỗi.

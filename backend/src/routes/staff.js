@@ -168,6 +168,7 @@ router.post('/sessions/:id/orders', requireRole('admin', 'staff'), asyncHandler(
       note: z.string().trim().max(200).default('')
     })).min(1).max(40),
     note: z.string().trim().max(300).default(''),
+    priority: z.enum(['normal', 'urgent']).default('normal'),
     clientRequestId: z.string().uuid()
   }).parse(req.body);
 
@@ -191,7 +192,7 @@ router.post('/sessions/:id/orders', requireRole('admin', 'staff'), asyncHandler(
       orderCode: 'OD-' + randomUUID().slice(0, 12).toUpperCase(),
       source: 'staff', createdBy: req.user._id, tableSession: session._id,
       clientRequestId: body.clientRequestId, orderType: 'dine-in', tableNumber: session.tableNumber,
-      items, note: body.note, subtotal, totalAmount: subtotal,
+      items, note: body.note, priority: body.priority, subtotal, totalAmount: subtotal,
       status: 'confirmed', statusHistory: [{ status: 'confirmed' }]
     });
   } catch (error) {
@@ -215,6 +216,54 @@ router.post('/sessions/:id/orders', requireRole('admin', 'staff'), asyncHandler(
     })
   ]);
   res.status(201).json({ order });
+}));
+
+
+// Staff may change quantities only before kitchen starts preparing the ticket.
+// Compare __v to reject concurrent modifications; keep the original price snapshot.
+router.patch('/orders/:id/items/:index', requireRole('admin', 'staff'), asyncHandler(async (req, res) => {
+  const order = await Order.findById(validId(req.params.id));
+  if (!order || order.source !== 'staff' || !order.tableSession) throw new AppError(404, 'Không tìm thấy lượt gọi món của nhân viên');
+  if (order.status !== 'confirmed') throw new AppError(409, 'Bếp đã bắt đầu xử lý, không được thay đổi món');
+  const session = await getActiveSession(String(order.tableSession));
+  if (await redis.get(lockKey(String(session._id))) !== String(req.user._id)) {
+    throw new AppError(423, 'Cần giữ quyền thao tác bàn để chỉnh món');
+  }
+  const index = z.coerce.number().int().min(0).parse(req.params.index);
+  const { quantity } = z.object({ quantity: z.coerce.number().int().min(0).max(99) }).parse(req.body);
+  if (index >= order.items.length) throw new AppError(404, 'Không tìm thấy dòng món');
+  const previous = order.items[index];
+  const delta = quantity - previous.quantity;
+  if (!delta) return res.json({ order });
+  const updatedItems = order.items.map(item => item.toObject());
+  const cancellingAll = quantity === 0 && updatedItems.length === 1;
+  if (quantity === 0 && !cancellingAll) updatedItems.splice(index, 1);
+  else if (!cancellingAll) updatedItems[index].quantity = quantity;
+  const subtotal = cancellingAll ? 0 : updatedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const write = await Order.updateOne(
+    { _id: order._id, status: 'confirmed', __v: order.__v },
+    {
+      $set: {
+        ...(cancellingAll ? { status: 'cancelled' } : { items: updatedItems }),
+        subtotal, totalAmount: subtotal
+      },
+      ...(cancellingAll ? { $push: { statusHistory: { status: 'cancelled' } } } : {}),
+      $inc: { __v: 1 }
+    }
+  );
+  if (!write.modifiedCount) throw new AppError(409, 'Đơn đã được thay đổi ở nơi khác, vui lòng tải lại');
+  await Promise.allSettled([
+    Food.updateOne({ _id: previous.food }, { $inc: { soldCount: delta } }),
+    redis.zIncrBy('leaderboard:foods', delta, String(previous.food))
+  ]);
+  await TableSession.updateOne({ _id: session._id }, {
+    $push: { activity: {
+      action: 'adjust-item', by: req.user._id,
+      detail: order.orderCode + ' · ' + previous.name + ': ' + previous.quantity + ' → ' + quantity
+    } }
+  });
+  const updated = await Order.findById(order._id).lean();
+  res.json({ order: updated });
 }));
 
 router.patch('/sessions/:id/close', requireRole('admin', 'cashier'), asyncHandler(async (req, res) => {

@@ -119,3 +119,10 @@ footer{height:76px;border-top:1px solid var(--line);display:flex;align-items:cen
 .staff-submit .order-button{width:auto;margin:0;padding:12px 17px}.staff-submit .order-button:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:1100px){.staff-layout{grid-template-columns:1fr}.staff-table-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:650px){.staff-workspace{padding:18px 12px 35px}.staff-workspace-head{align-items:start;flex-direction:column}.staff-workspace-head h1{font-size:27px}.staff-tables,.staff-order-panel{padding:14px}.staff-table-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.staff-menu-grid{grid-template-columns:1fr}.staff-workspace-head .secondary-button{width:auto}}
+
+.staff-existing-item{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.staff-item-edit{display:flex;gap:4px;flex-shrink:0}
+.staff-item-edit button{background:#fff;border:1px solid #d6c8b9;border-radius:6px;display:grid;place-items:center;width:25px;height:25px}
+.staff-priority{display:flex;align-items:center;gap:8px;font-weight:700;font-size:12px;margin-top:12px;color:#9b442b}
+.staff-priority input{width:16px;height:16px}
+.kitchen-urgent{display:inline-block;color:#d84930;font-size:11px;font-weight:800}

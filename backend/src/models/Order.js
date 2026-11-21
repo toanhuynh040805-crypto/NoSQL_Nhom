@@ -13,6 +13,7 @@ const orderSchema = new mongoose.Schema({
   customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   source: { type: String, enum: ['customer', 'staff'], default: 'customer' },
+  priority: { type: String, enum: ['normal', 'urgent'], default: 'normal' },
   tableSession: { type: mongoose.Schema.Types.ObjectId, ref: 'TableSession' },
   clientRequestId: { type: String },
   items: { type: [orderItemSchema], validate: value => value.length > 0 },

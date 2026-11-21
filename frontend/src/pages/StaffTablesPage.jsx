@@ -29,6 +29,7 @@ export default function StaffTablesPage() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [draft, setDraft] = useState({});
+  const [priority, setPriority] = useState('normal');
   const [guestCount, setGuestCount] = useState(2);
   const [customerName, setCustomerName] = useState('');
   const [busy, setBusy] = useState(false);
@@ -139,12 +140,19 @@ export default function StaffTablesPage() {
     if (!items.length) throw new Error('Hãy chọn món trước khi gửi bếp');
     if (!requestIdRef.current) requestIdRef.current = crypto.randomUUID();
     await api('/api/staff/sessions/' + activeSessionId + '/orders', {
-      method: 'POST', body: JSON.stringify({ items, clientRequestId: requestIdRef.current })
+      method: 'POST', body: JSON.stringify({ items, priority, clientRequestId: requestIdRef.current })
     });
     setDraft({});
+    setPriority('normal');
     requestIdRef.current = null;
     await loadSession(activeSessionId);
   }, 'Đã gửi món sang bếp');
+
+  const changeQuantity = (orderId, index, quantity) => runAction(async () => {
+    await api('/api/staff/orders/' + orderId + '/items/' + index, {
+      method: 'PATCH', body: JSON.stringify({ quantity })
+    });
+  }, 'Đã chỉnh số lượng món trước khi bếp chế biến');
 
   const updateOrder = (orderId, status) => runAction(async () => {
     await api('/api/orders/' + orderId + '/status', {
@@ -248,7 +256,13 @@ export default function StaffTablesPage() {
               <div className="staff-order-list">{orders.length ? orders.map(order => <article key={order._id} className="staff-order-ticket">
                 <div className="staff-ticket-head"><b>{order.orderCode}</b><small>{new Date(order.createdAt).toLocaleTimeString('vi-VN')}</small></div>
                 <span className={'staff-state ' + order.status}>{orderText[order.status] || order.status}</span>
-                <ul>{order.items.map((item, index) => <li key={index}>{item.quantity}× {item.name}{item.note && <em> · {item.note}</em>}</li>)}</ul>
+                <ul>{order.items.map((item, index) => <li key={index} className="staff-existing-item">
+                  <span>{item.quantity}× {item.name}{item.note && <em> · {item.note}</em>}</span>
+                  {order.status === 'confirmed' && canServe && isOwner && <span className="staff-item-edit">
+                    <button title="Giảm số lượng (0 = hủy món)" disabled={busy} onClick={() => changeQuantity(order._id, index, item.quantity - 1)}><Minus size={12}/></button>
+                    <button title="Tăng số lượng" disabled={busy || item.quantity >= 99} onClick={() => changeQuantity(order._id, index, item.quantity + 1)}><Plus size={12}/></button>
+                  </span>}
+                </li>)}</ul>
                 <div className="staff-ticket-bottom"><b>{money(order.totalAmount)}</b><span>{order.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}</span></div>
                 <div className="staff-ticket-actions">
                   {order.status === 'ready' && canServe && <button onClick={() => updateOrder(order._id, 'completed')} disabled={busy}><CheckCircle2 size={15}/> Đã phục vụ</button>}
@@ -268,6 +282,7 @@ export default function StaffTablesPage() {
                     <div className="staff-qty"><button onClick={() => updateDraft(food._id, -1)} disabled={!draft[food._id]}><Minus size={14}/></button><b>{draft[food._id]?.quantity || 0}</b><button onClick={() => updateDraft(food._id, 1)}><Plus size={14}/></button></div>
                     {draft[food._id] && <input maxLength="200" placeholder="Ghi chú món: ít cay..." value={draft[food._id].note} onChange={e => updateNote(food._id, e.target.value)}/>}</div>
                 </article>)}</div>
+                <label className="staff-priority"><input type="checkbox" checked={priority === 'urgent'} onChange={e => { setPriority(e.target.checked ? 'urgent' : 'normal'); requestIdRef.current = null; }}/> Ưu tiên chế biến lượt gọi món này</label>
                 <div className="staff-submit"><span>{draftCount} món · <b>{money(draftTotal)}</b></span>
                   <button className="order-button" onClick={submit} disabled={busy || !isOwner || !draftCount}>{busy ? 'Đang xử lý...' : 'Gửi món sang bếp'}</button></div>
               </>}
