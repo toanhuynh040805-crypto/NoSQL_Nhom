@@ -25,6 +25,13 @@ const validId = id => {
 const activeReservationFilter = () => ({
   status: 'confirmed', reservedAt: { $gte: new Date(Date.now() - 30 * 60 * 1000) }
 });
+const dueReservationFilter = () => ({
+  status: 'confirmed',
+  reservedAt: {
+    $gte: new Date(Date.now() - 30 * 60 * 1000),
+    $lte: new Date(Date.now() + 30 * 60 * 1000)
+  }
+});
 
 async function getLock(sessionId) {
   const ownerId = await redis.get(lockKey(sessionId));
@@ -90,15 +97,16 @@ router.post('/tables/:id/open', requireRole('admin', 'staff'), asyncHandler(asyn
   if (body.guestCount > table.capacity) throw new AppError(400, 'Số khách vượt sức chứa bàn');
 
   let reservation = null;
-  if (table.status === 'reserved') {
-    if (!body.reservationId) throw new AppError(409, 'Bàn đang được đặt trước, hãy nhận đúng lịch đặt bàn');
+  if (body.reservationId) {
     reservation = await Reservation.findOne({
-      _id: validId(body.reservationId), table: table._id, ...activeReservationFilter()
+      _id: validId(body.reservationId), table: table._id, ...dueReservationFilter()
     });
-    if (!reservation) throw new AppError(409, 'Lịch đặt bàn chưa được xác nhận hoặc không đúng bàn');
+    if (!reservation) throw new AppError(409, 'Chỉ nhận bàn đặt đã xác nhận trong vòng 30 phút quanh giờ hẹn');
     if (body.guestCount !== reservation.guestCount) throw new AppError(409, 'Số khách không khớp lịch đặt bàn');
-  } else if (body.reservationId) {
-    throw new AppError(400, 'Bàn trống không yêu cầu mã đặt bàn');
+  } else {
+    if (table.status === 'reserved') throw new AppError(409, 'Bàn đã được giữ cho lịch đặt trước');
+    const due = await Reservation.exists({ table: table._id, ...dueReservationFilter() });
+    if (due) throw new AppError(409, 'Bàn có khách đặt đến trong vòng 30 phút: hãy nhận đúng lịch đặt');
   }
 
   // Conditional update ensures two waiters cannot both receive an available table.
@@ -284,7 +292,7 @@ router.patch('/sessions/:id/close', requireRole('admin', 'cashier'), asyncHandle
   );
   if (!closed) throw new AppError(409, 'Phiên bàn đã đóng');
   const next = await Reservation.findOne({
-    table: session.table, ...activeReservationFilter()
+    table: session.table, ...dueReservationFilter()
   }).sort({ reservedAt: 1 });
   await DiningTable.updateOne(
     { _id: session.table, status: 'occupied' },

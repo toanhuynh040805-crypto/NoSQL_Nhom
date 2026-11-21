@@ -4,7 +4,7 @@
 
 1. Phục vụ đăng nhập được chuyển thẳng tới `/staff/tables`; thu ngân cũng mở sơ đồ bàn; quản lý có link truy cập.
 2. Hiển thị sơ đồ theo khu, màu trống/đặt/đang phục vụ, tổng số chỗ, lượng khách, lịch đặt đã xác nhận.
-3. Phục vụ nhận bàn thường hoặc bàn đặt đã xác nhận. Dùng MongoDB `table_sessions` và unique partial index để chống mở hai phiên hoạt động trên cùng một bàn.
+3. Phục vụ nhận bàn thường hoặc bàn đặt đã xác nhận (cho phép nhận khách thường khi đặt bàn còn xa; khóa giữ bàn khi lịch đặt đến trong 30 phút). Dùng MongoDB `table_sessions` và unique partial index để chống mở hai phiên hoạt động trên cùng một bàn.
 4. Redis quản lý quyền thao tác bàn 5 phút (`table:lock:<sessionId>`), có nhận, gia hạn, trả quyền; nhân viên khác được xem nhưng không được gửi món khi khóa còn hiệu lực.
 5. Chọn món, ghi chú, tăng giảm số lượng, gửi từng lượt order từ đúng bàn; MongoDB lưu snapshot giá tại lúc gọi. `clientRequestId` chống tạo trùng đơn khi gửi lại. Chỉnh/hủy số lượng dòng món chỉ được thực hiện trước khi bếp bắt đầu chế biến; có ưu tiên theo lượt món.
 6. Bếp tiếp nhận các order đã xác nhận trong màn hình `/kitchen` (đang polling 10 giây). Khi bếp báo sẵn sàng, phục vụ xác nhận đã mang ra.
@@ -37,7 +37,7 @@
 
 - Session hóa các đơn do khách web/QR tạo để chia sẻ một phiên bàn duy nhất với phục vụ; mã QR an toàn gắn phiên bàn.
 - Realtime WebSocket/SignalR tương đương cho bếp, phục vụ, thu ngân và thông báo (thay thế polling).
-- Nhận bàn thường có giữ lịch đặt 30 phút, tự động hóa đến giờ/quá giờ, chống xung đột đặt bàn.
+- Nhắc lịch tự động khi đến giờ/quá giờ; đã có kiểm tra trùng lịch và khung nhận bàn đặt ±30 phút, nhưng chưa có tác vụ nền gửi nhắc.
 - Tách, gộp, chuyển bàn với nhật ký, chặn gộp hai khách thành viên khác nhau, giữ tên thành viên khi tách.
 - Ưu tiên món ở cấp từng món và cho từng bộ phận bếp/nước (hiện đã có ưu tiên ở cấp lượt order).
 - Phiếu tạm tính, QR thanh toán, đặt cọc, trừ cọc, áp dụng điểm loyalty vào hóa đơn, chống thanh toán trùng.

@@ -31,6 +31,7 @@ export default function StaffTablesPage() {
   const [draft, setDraft] = useState({});
   const [priority, setPriority] = useState('normal');
   const [guestCount, setGuestCount] = useState(2);
+  const [receiveReservation, setReceiveReservation] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -75,8 +76,10 @@ export default function StaffTablesPage() {
     setSearch('');
     setCategory('all');
     requestIdRef.current = null;
-    setGuestCount(table.nextReservation?.guestCount || Math.min(2, table.capacity));
-    setCustomerName(table.nextReservation?.customerName || '');
+    const due = table.nextReservation && Math.abs(new Date(table.nextReservation.reservedAt).getTime() - Date.now()) <= 30 * 60 * 1000;
+    setReceiveReservation(Boolean(due));
+    setGuestCount(due ? table.nextReservation.guestCount : Math.min(2, table.capacity));
+    setCustomerName(due ? table.nextReservation.customerName : '');
   };
 
   const runAction = async (task, success) => {
@@ -101,7 +104,7 @@ export default function StaffTablesPage() {
     const data = await api('/api/staff/tables/' + chosenId + '/open', {
       method: 'POST', body: JSON.stringify({
         guestCount: Number(guestCount), customerName,
-        reservationId: selected.status === 'reserved' ? selected.nextReservation?._id : undefined
+        reservationId: receiveReservation ? selected.nextReservation?._id : undefined
       })
     });
     setSessionData(null);
@@ -231,11 +234,21 @@ export default function StaffTablesPage() {
           {!selected.activeSession ? (
             <div className="staff-intake">
               {['available', 'reserved'].includes(selected.status) && canServe ? <>
-                <h3>{selected.status === 'reserved' ? 'Nhận bàn đặt trước' : 'Nhận bàn thường'}</h3>
-                {selected.nextReservation && <p>Lịch đặt: {selected.nextReservation.reservationCode} · {new Date(selected.nextReservation.reservedAt).toLocaleString('vi-VN')}</p>}
+                <h3>{receiveReservation ? 'Nhận bàn đặt trước' : 'Nhận bàn thường'}</h3>
+                {selected.nextReservation && <>
+                  <p>Lịch đặt: {selected.nextReservation.reservationCode} · {new Date(selected.nextReservation.reservedAt).toLocaleString('vi-VN')}</p>
+                  <label className="staff-priority"><input type="checkbox" checked={receiveReservation}
+                    onChange={e => {
+                      setReceiveReservation(e.target.checked);
+                      if (e.target.checked) {
+                        setGuestCount(selected.nextReservation.guestCount);
+                        setCustomerName(selected.nextReservation.customerName);
+                      }
+                    }}/> Nhận khách theo lịch đặt này (chỉ trong vòng 30 phút quanh giờ hẹn)</label>
+                </>}
                 <label><UsersRound size={16}/> Số khách<input type="number" min="1" max={selected.capacity} value={guestCount} onChange={e => setGuestCount(e.target.value)}/></label>
                 <label>Tên khách / thành viên<input maxLength="100" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Không bắt buộc"/></label>
-                <button className="order-button" disabled={busy || !guestCount || Number(guestCount) > selected.capacity || (selected.status === 'reserved' && !selected.nextReservation)} onClick={openTable}>Nhận bàn và bắt đầu gọi món</button>
+                <button className="order-button" disabled={busy || !guestCount || Number(guestCount) > selected.capacity || (selected.status === 'reserved' && !receiveReservation)} onClick={openTable}>Nhận bàn và bắt đầu gọi món</button>
               </> : <p>Bàn chưa có phiên gọi món dành cho nhân viên. Nếu có đơn từ luồng web trước đó, hãy kiểm tra ở mục Đơn hàng; chỉ nhận bàn mới sau khi bàn được giải phóng.</p>}
             </div>
           ) : !sessionData || String(sessionData.session?._id) !== String(activeSessionId)
