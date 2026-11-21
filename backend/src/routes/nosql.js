@@ -20,10 +20,8 @@ async function countRedisKeys(pattern) {
 async function graphCounts() {
   const session = neo4jDriver.session({ defaultAccessMode: neo4j.session.READ });
   try {
-    const [nodes, relationships] = await Promise.all([
-      session.run('MATCH (n) RETURN labels(n)[0] AS label, count(n) AS total ORDER BY label'),
-      session.run('MATCH ()-[r]->() RETURN type(r) AS type, count(r) AS total ORDER BY type')
-    ]);
+    const nodes = await session.run('MATCH (n) RETURN labels(n)[0] AS label, count(n) AS total ORDER BY label');
+    const relationships = await session.run('MATCH ()-[r]->() RETURN type(r) AS type, count(r) AS total ORDER BY type');
     return {
       nodes: nodes.records.map(record => ({
         name: record.get('label'), count: record.get('total').toNumber()
