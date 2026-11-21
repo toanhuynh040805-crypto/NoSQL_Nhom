@@ -46,6 +46,7 @@ export function AppProvider({ children }) {
     await refreshCart();
     await refreshAccountExtras();
     notify(`Xin chào ${data.user.fullName}`);
+    return data.user;
   };
 
   const register = async payload => {
@@ -54,6 +55,7 @@ export function AppProvider({ children }) {
     setUser(data.user);
     await refreshAccountExtras();
     notify('Đăng ký thành công');
+    return data.user;
   };
 
   const logout = async () => {

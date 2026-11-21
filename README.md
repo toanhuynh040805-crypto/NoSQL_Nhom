@@ -116,6 +116,13 @@ Tài khoản mẫu sau khi seed:
 | `POST` | `/api/reviews` | Đánh giá món |
 | `GET` | `/api/admin/dashboard` | Thống kê quản trị |
 
+## Quy trình bàn phục vụ (nâng cấp từ KLCN)
+
+- Phục vụ, thu ngân và quản lý có trang **/staff/tables** với sơ đồ bàn, lịch đặt, phiên bàn, gọi món trực tiếp và thanh toán.
+- Mỗi bàn chỉ có một phiên active; khóa quyền chỉnh sửa bằng Redis trong 5 phút.
+- Gọi món theo lượt (staff orders), bếp xử lý, phục vụ xác nhận đã mang món ra, thu ngân xác nhận thanh toán trước khi kết thúc phiên.
+- Hướng dẫn và phần KLCN còn thiếu: [docs/STAFF_ORDER_WORKFLOW.md](docs/STAFF_ORDER_WORKFLOW.md).
+
 ## Ngoài phạm vi bản đồ án hiện tại
 
 - Tích hợp cổng thanh toán thật và xử lý callback từ nhà cung cấp thanh toán.

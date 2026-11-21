@@ -13,6 +13,7 @@ import NotificationsPage from './pages/NotificationsPage.jsx';
 import ReservationsPage from './pages/ReservationsPage.jsx';
 import KitchenPage from './pages/KitchenPage.jsx';
 import OperationsPage from './pages/OperationsPage.jsx';
+import StaffTablesPage from './pages/StaffTablesPage.jsx';
 import './styles.css';
 
 createRoot(document.getElementById('root')).render(
@@ -24,6 +25,7 @@ createRoot(document.getElementById('root')).render(
     <Route path="/admin" element={<OperationsPage/>}/>
     <Route path="/operations" element={<OperationsPage/>}/>
     <Route path="/kitchen" element={<KitchenPage/>}/>
+    <Route path="/staff/tables" element={<StaffTablesPage/>}/>
     <Route path="/reservations" element={<ReservationsPage/>}/>
     <Route path="/favorites" element={<FavoritesPage/>}/>
     <Route path="/profile" element={<ProfilePage/>}/>

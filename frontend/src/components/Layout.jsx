@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, ChefHat, ClipboardList, CookingPot, Heart, LayoutDashboard, LogIn, LogOut, ShoppingBag, Sparkles } from 'lucide-react';
+import { Bell, CalendarDays, ChefHat, ClipboardList, CookingPot, Heart, LayoutDashboard, LogIn, LogOut, ShoppingBag, Sparkles, Table2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 
@@ -7,12 +7,13 @@ export default function Layout({ children }) {
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   return <>
     <header className="topbar">
-      <NavLink className="brand" to="/"><span><ChefHat size={24} /></span>Bếp Nhà</NavLink>
+      <NavLink className="brand" to={user?.role === 'staff' || user?.role === 'cashier' ? '/staff/tables' : '/'}><span><ChefHat size={24} /></span>Bếp Nhà</NavLink>
       <nav>
         <NavLink to="/"><Sparkles size={17} /> Thực đơn</NavLink>
         {user?.role === 'customer' && <NavLink to="/reservations"><CalendarDays size={17} /> Đặt bàn</NavLink>}
         {user?.role === 'customer' && <NavLink to="/orders"><ClipboardList size={17} /> Đơn của tôi</NavLink>}
         {user?.role === 'customer' && <NavLink to="/favorites"><Heart size={17} /> Yêu thích</NavLink>}
+        {['admin', 'staff', 'cashier'].includes(user?.role) && <NavLink to="/staff/tables"><Table2 size={17} /> Sơ đồ bàn & order</NavLink>}
         {['admin', 'staff', 'cashier'].includes(user?.role) && <NavLink to="/operations"><LayoutDashboard size={17} /> Vận hành</NavLink>}
         {['admin', 'kitchen'].includes(user?.role) && <NavLink to="/kitchen"><CookingPot size={17} /> Bếp</NavLink>}
       </nav>

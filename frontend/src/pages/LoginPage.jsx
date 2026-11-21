@@ -15,9 +15,15 @@ export default function LoginPage() {
   const submit = async event => {
     event.preventDefault(); setBusy(true); setError('');
     try {
-      if (mode === 'login') await login({ email: form.email, password: form.password });
-      else await register(form);
-      navigate(params.get('next') || '/');
+      const loggedIn = mode === 'login'
+        ? await login({ email: form.email, password: form.password })
+        : await register(form);
+      const defaultPage = loggedIn.role === 'staff' || loggedIn.role === 'cashier'
+        ? '/staff/tables'
+        : loggedIn.role === 'kitchen' ? '/kitchen'
+        : loggedIn.role === 'admin' ? '/operations' : '/';
+      const next = params.get('next');
+      navigate(next?.startsWith('/') && !next.startsWith('//') ? next : defaultPage);
     } catch (err) { setError(err.message); } finally { setBusy(false); }
   };
 
