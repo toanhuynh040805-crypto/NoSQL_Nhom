@@ -21,8 +21,8 @@ Nguồn đối chiếu: repository KLCN `toanhuynh040805-crypto/KhoaLuan_AppQuan
 | Phục vụ | Giao bàn theo ca/khu; kiểm tra quyền chính xác khu T1 A/T1 B | **Chưa** |
 | Bếp/nước | Nhận món và thay đổi trạng thái chế biến | **Có** theo lượt order, polling 10 giây |
 | Bếp/nước | Tách station bếp/nước, ưu tiên từng món, đẩy realtime | **Chưa đầy đủ** |
-| Thu ngân | Xem món bàn, xác nhận đã thu tiền, kết thúc phiên | **Đã bổ sung**, với trạng thái thanh toán mô phỏng |
-| Thu ngân | Phiếu tạm tính có QR, hóa đơn sau thanh toán, tiền cọc, hoàn tiền | **Chưa đầy đủ** |
+| Thu ngân | Xem món bàn, nhận tiền mặt/chuyển khoản, kết thúc phiên | **Đã bổ sung** bảng tổng hóa đơn, tiền thối, VietQR BIDV và biên nhận có người xác nhận; chuyển khoản hiện đối soát thủ công |
+| Thu ngân | Phiếu tạm tính có QR, hóa đơn sau thanh toán, tiền cọc, hoàn tiền | **Đã có** bảng tạm tính/VietQR và phiếu thu MongoDB; **chưa có** PDF/in hóa đơn, cọc, trừ cọc, hoàn tiền |
 | Quản lý | Dashboard, danh mục, thực đơn, nhân viên, kho, khuyến mãi | **Có cơ bản** |
 | Quản lý | Phân quyền chi tiết, CRUD ca làm, điều phối khu vực, chấm công GPS | **Chưa** |
 | Quản lý | Thống kê khách, báo cáo doanh thu, phân tích hiệu quả | **Có cơ bản**; thống kê khách chi tiết **chưa có** |
@@ -42,10 +42,12 @@ Nguồn đối chiếu: repository KLCN `toanhuynh040805-crypto/KhoaLuan_AppQuan
 
 ## Thứ tự công việc kế tiếp
 
-1. Hợp nhất đơn Web/QR vào phiên bàn chung, bảo vệ token QR; thêm đặt cọc, tiền thanh toán, khuyến mãi/điểm thành viên theo hóa đơn.
+1. Hợp nhất đơn Web/QR vào phiên bàn chung, bảo vệ token QR; thêm đặt cọc, trừ cọc, khuyến mãi/điểm thành viên theo hóa đơn (tiền mặt/chuyển khoản BIDV đã có xác nhận thủ công).
 2. Tách/gộp/chuyển có ràng buộc thành viên, số lượng, bàn đích và kiểm thử 2 nhân viên.
 3. Realtime sự kiện trạng thái bàn/đơn/bếp/thu ngân, chia bếp/nước ở cấp món.
 4. Ca làm, giao khu chính xác, chấm công GPS, thông báo đặt bàn đến giờ/quá giờ.
 5. Hoàn thiện báo cáo/biểu đồ/audit log; đồng bộ SRS, SDS, DFD, Use Case, mô hình MongoDB/Redis/Neo4j và kiểm thử.
 
 **Ghi chú:** Ma trận này phân biệt rõ phần đã có code và phần chưa chuyển; không coi build thành công là đã kiểm chứng đầy đủ nghiệp vụ.
+
+Chi tiết: [PAYMENT_FLOW.md](PAYMENT_FLOW.md).
