@@ -11,13 +11,14 @@ const columns = [
 ];
 
 export default function KitchenPage() {
-  const { user, notify } = useApp();
+  const { user, authReady, notify } = useApp();
   const [orders, setOrders] = useState([]);
   const load = () => api('/api/orders/queue').then(data => setOrders(data.orders));
   useEffect(() => {
     if (!user || !['admin', 'kitchen'].includes(user.role)) return;
     load(); const timer = setInterval(load, 10000); return () => clearInterval(timer);
   }, [user]);
+  if (!authReady) return <div className="empty">Đang xác thực...</div>;
   if (!user || !['admin', 'kitchen'].includes(user.role)) return <Navigate to="/" replace />;
   const update = async (id, status) => {
     try { await api(`/api/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }); await load(); notify('Đã cập nhật món tại bếp'); }

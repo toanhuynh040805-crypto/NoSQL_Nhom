@@ -206,6 +206,8 @@ router.post('/sessions/:id/orders', requireRole('admin', 'staff'), asyncHandler(
     { $push: { activity: { action: 'order', by: req.user._id, detail: order.orderCode } } }
   );
   await Promise.allSettled([
+    ...items.map(item => Food.updateOne({ _id: item.food }, { $inc: { soldCount: item.quantity } })),
+    ...items.map(item => redis.zIncrBy('leaderboard:foods', item.quantity, String(item.food))),
     notifyRoles(['admin', 'kitchen'], {
       type: 'order', title: 'Bàn ' + session.tableNumber + ' vừa gọi món',
       message: 'Đơn ' + order.orderCode + ' có ' + items.length + ' dòng món',
@@ -241,7 +243,7 @@ router.patch('/sessions/:id/close', requireRole('admin', 'cashier'), asyncHandle
   );
   if (session.reservation) {
     await Reservation.updateOne(
-      { _id: session.reservation, status: 'seated' },
+      { _id: session.reservation._id, status: 'seated' },
       { $set: { status: 'completed' }, $push: { statusHistory: { status: 'completed', changedBy: req.user._id } } }
     );
   }

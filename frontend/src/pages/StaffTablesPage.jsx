@@ -2,7 +2,7 @@ import {
   CheckCircle2, ChefHat, CreditCard, LockKeyhole, Minus, Plus,
   RefreshCw, Search, Table2, UnlockKeyhole, UsersRound
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 import { api, money } from '../lib/api.js';
@@ -17,7 +17,7 @@ const orderText = {
 };
 
 export default function StaffTablesPage() {
-  const { user, notify } = useApp();
+  const { user, authReady, notify } = useApp();
   const permitted = ['admin', 'staff', 'cashier'].includes(user?.role);
   const canServe = ['admin', 'staff'].includes(user?.role);
   const canCashier = ['admin', 'cashier'].includes(user?.role);
@@ -187,7 +187,7 @@ export default function StaffTablesPage() {
   const orders = sessionData?.orders || [];
   const payable = orders.filter(o => o.status !== 'cancelled');
   const canClose = payable.every(o => o.status === 'completed' && o.paymentStatus === 'paid');
-  if (!user && localStorage.getItem('token')) {
+  if (!authReady) {
     return <div className="page"><div className="empty">Đang xác thực tài khoản nhân viên...</div></div>;
   }
   if (!permitted) return <Navigate to="/login" replace />;

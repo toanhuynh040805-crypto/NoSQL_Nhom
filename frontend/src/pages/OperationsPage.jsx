@@ -23,7 +23,7 @@ const tabConfig = [
 ];
 
 export default function OperationsPage() {
-  const { user, notify } = useApp();
+  const { user, authReady, notify } = useApp();
   const [params, setParams] = useSearchParams();
   const allowedTabs = useMemo(() => tabConfig.filter(tab => tab[3].includes(user?.role)), [user]);
   const requestedTab = params.get('tab');
@@ -55,6 +55,7 @@ export default function OperationsPage() {
     } catch (error) { notify(error.message); } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [activeTab, user]);
+  if (!authReady) return <div className="empty">Đang xác thực...</div>;
   if (!permitted) return <Navigate to="/" replace />;
 
   const action = async (request, success) => {
