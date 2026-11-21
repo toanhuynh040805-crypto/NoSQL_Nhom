@@ -24,6 +24,8 @@ jobs:
         run: node --test scripts/payment-bank.test.mjs
       - name: Validate KLCN menu images and source catalog
         run: node --test scripts/menu-catalog.test.mjs
+      - name: Check employee role homepages
+        run: node --test scripts/role-home.test.mjs
       - name: Build frontend
         run: npm run build
 

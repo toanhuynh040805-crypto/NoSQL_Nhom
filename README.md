@@ -102,6 +102,12 @@ Tài khoản mẫu sau khi seed:
 - Nếu API báo lỗi kết nối, hãy kiểm tra Docker Desktop, `docker compose ps`, terminal backend, và `http://localhost:5000/api/health`. Trên Vite, `/api` và `/images` được chuyển tiếp tới backend cổng 5000.
 - Tên và ảnh món lấy từ bộ dữ liệu KLCN lưu trong `backend/src/data/menuCatalog.js`; ảnh tương ứng nằm trong `backend/public/images/menu`.
 
+## Điều hướng theo tài khoản nhân viên
+
+- Truy cập `/` sẽ đưa tài khoản **phục vụ** và **thu ngân** đến `/staff/tables`, tài khoản **bếp** đến `/kitchen`, tài khoản **quản lý** đến `/operations`.
+- Khách/khách chưa đăng nhập vẫn thấy thực đơn ở `/`; quản trị có thể xem thực đơn bằng đường dẫn `/menu`.
+- Nhân viên không còn thấy nút giỏ hàng/đặt món của khách trong thanh điều hướng. Thu ngân dùng sơ đồ bàn để thu tiền.
+
 ## Luồng dữ liệu đặt món
 
 1. Khách chọn món; API lưu từng mục vào hash Redis `cart:user:<id>` hoặc `cart:guest:<id>`.

@@ -2,6 +2,7 @@ import { ChefHat } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
+import { getHomePath } from '../lib/roleHome.js';
 
 export default function LoginPage() {
   const { login, register } = useApp();
@@ -18,10 +19,7 @@ export default function LoginPage() {
       const loggedIn = mode === 'login'
         ? await login({ email: form.email, password: form.password })
         : await register(form);
-      const defaultPage = loggedIn.role === 'staff' || loggedIn.role === 'cashier'
-        ? '/staff/tables'
-        : loggedIn.role === 'kitchen' ? '/kitchen'
-        : loggedIn.role === 'admin' ? '/operations' : '/';
+      const defaultPage = getHomePath(loggedIn.role);
       const next = params.get('next');
       navigate(next?.startsWith('/') && !next.startsWith('//') ? next : defaultPage);
     } catch (err) { setError(err.message); } finally { setBusy(false); }
