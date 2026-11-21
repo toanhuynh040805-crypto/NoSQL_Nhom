@@ -47,9 +47,9 @@ export default function PaymentDialog({
       if (onPaid) await onPaid(result.receipt);
       onClose();
     } catch (e) {
-      setError(e.message);
-      // A stale quote or a network failure must not make the UI declare success.
+      // A stale quote or an interrupted request must not declare success.
       await load().catch(() => {});
+      setError(e.message);
     } finally {
       setBusy(false);
     }
