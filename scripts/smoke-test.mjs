@@ -72,7 +72,7 @@ assert.equal(billQuote.amount, menu.foods[0].price * 3, 'table bill must reflect
 assert.equal(billQuote.transfer.bankName, 'BIDV');
 assert.equal(billQuote.transfer.bankBin, '970418');
 assert.equal(billQuote.transfer.bankAccountNo, '5811704638');
-assert.match(billQuote.transfer.qrUrl, /img\\.vietqr\\.io/);
+assert.match(billQuote.transfer.qrUrl, /img\.vietqr\.io/);
 await request('PATCH', '/api/orders/' + orderId + '/payment', ct, { paymentStatus: 'paid' }, 410);
 await request('POST', '/api/payments/session/' + sessionId + '/confirm', ct, {
   method: 'cash', expectedAmount: billQuote.amount,
