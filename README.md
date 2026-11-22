@@ -135,9 +135,9 @@ Tài khoản mẫu sau khi seed:
 
 - Phục vụ, thu ngân và quản lý có trang **/staff/tables** với sơ đồ bàn, lịch đặt, phiên bàn, gọi món trực tiếp và thanh toán.
 - Mỗi bàn chỉ có một phiên active; khóa quyền chỉnh sửa bằng Redis trong 5 phút.
-- Gọi món theo lượt (staff orders), bếp xử lý, phục vụ xác nhận đã mang món ra, thu ngân xác nhận thanh toán trước khi kết thúc phiên.
+- Gọi món theo lượt (staff orders), bếp xử lý, phục vụ xác nhận đã mang món ra, thu ngân xác nhận thanh toán là hệ thống tự động kết thúc phiên, xóa khóa thao tác và trả bàn về Trống/Đã đặt tùy lịch đặt gần nhất.
 - Hướng dẫn và phần KLCN còn thiếu: [docs/STAFF_ORDER_WORKFLOW.md](docs/STAFF_ORDER_WORKFLOW.md).
-- **Thanh toán tiền mặt hoặc chuyển khoản BIDV (VietQR)**: thu ngân mở hóa đơn chung của bàn, nhập tiền khách đưa/tiền thối hoặc xác nhận chuyển khoản sau khi tra cứu khoản tiền thực nhận; lưu `PaymentReceipt` và khóa gọi thêm sau khi thu tiền.
+- **Thanh toán tiền mặt hoặc chuyển khoản BIDV (VietQR)**: thu ngân mở hóa đơn chung của bàn, nhập tiền khách đưa/tiền thối hoặc xác nhận chuyển khoản sau khi tra cứu khoản tiền thực nhận; lưu `PaymentReceipt`, tự động đóng phiên và trả bàn sau khi thu tiền. Nút xác nhận chuyển khoản chỉ bật khi thu ngân đã tích xác minh tiền thực nhận; mã giao dịch là tùy chọn.
 - Khách đặt từ Web chọn tiền mặt hoặc chuyển khoản khi đặt món, xem QR trong **Đơn của tôi**; doanh thu báo cáo chỉ tính đơn đã thanh toán.
 - Xem chi tiết ngân hàng và các bước bảo đảm an toàn: [docs/PAYMENT_FLOW.md](docs/PAYMENT_FLOW.md).
 
