@@ -8,7 +8,7 @@
 4. Redis quản lý quyền thao tác bàn 5 phút (`table:lock:<sessionId>`), có nhận, gia hạn, trả quyền; nhân viên khác được xem nhưng không được gửi món khi khóa còn hiệu lực.
 5. Chọn món, ghi chú, tăng giảm số lượng, gửi từng lượt order từ đúng bàn; MongoDB lưu snapshot giá tại lúc gọi. `clientRequestId` chống tạo trùng đơn khi gửi lại. Chỉnh/hủy số lượng dòng món chỉ được thực hiện trước khi bếp bắt đầu chế biến; có ưu tiên theo lượt món.
 6. Bếp tiếp nhận các order đã xác nhận trong màn hình `/kitchen` (đang polling 10 giây). Khi bếp báo sẵn sàng, phục vụ xác nhận đã mang ra.
-7. Thu ngân thanh toán **toàn bộ lượt món chưa thanh toán trong phiên bàn** bằng tiền mặt (nhập tiền khách đưa và tính tiền thối) hoặc chuyển khoản BIDV/VietQR (đối chiếu giao dịch thực nhận thủ công); lưu phiếu thu và chỉ được kết thúc phiên khi toàn bộ lượt món không hủy đã phục vụ và thanh toán. Nếu còn đặt bàn đã xác nhận thì bàn trở lại trạng thái đặt, thay vì trả trống bừa bãi.
+7. Thu ngân thanh toán **toàn bộ lượt món chưa thanh toán trong phiên bàn** bằng tiền mặt (nhập tiền khách đưa và tính tiền thối) hoặc chuyển khoản BIDV/VietQR (đối chiếu giao dịch thực nhận thủ công); lưu phiếu thu và **tự động kết thúc phiên, trả bàn** khi toàn bộ lượt món không hủy đã phục vụ và thanh toán. Nếu còn đặt bàn đã xác nhận thì bàn trở lại trạng thái đặt, thay vì trả trống bừa bãi.
 8. Có chuyển bàn trống đủ chỗ (chuyển cả phiên và lịch sử đơn, kiểm tra lịch đặt gần nhất), không cho tự chuyển bàn đã nhận theo lịch đặt. Lưu nhật ký mở bàn, gọi món và đóng phiên ở `TableSession.activity`. Giữ nguyên đường gọi món cho khách hàng hiện có.
 
 ## Phân quyền
@@ -20,7 +20,7 @@
 | Chuyển món sang đang làm / sẵn sàng | Không (trong UI mới) | Có | Không | Có (màn hình bếp) |
 | Đánh dấu đã phục vụ | Có | Không | Không | Có |
 | Xác nhận thanh toán | Không | Không | Có | Có |
-| Kết thúc phiên và trả bàn | Không | Không | Có | Có |
+| Trả bàn tự động khi thu tiền thành công | Không | Không | Có | Có |
 
 ## Chạy thử an toàn
 
@@ -29,9 +29,9 @@
 - Chọn bàn trống -> nhận bàn -> giữ khóa 5 phút -> thêm món -> gửi bếp.
 - Đăng nhập `bep@quanan.vn` ở trình duyệt khác, vào `/kitchen`: bắt đầu chế biến và báo sẵn sàng.
 - Trở lại nhân viên phục vụ: đánh dấu đã phục vụ.
-- Đăng nhập `thungan@quanan.vn`, chọn bàn -> xác nhận thu tiền -> kết thúc phiên -> sơ đồ bàn cập nhật.
+- Đăng nhập `thungan@quanan.vn`, chọn bàn -> xác nhận đã nhận tiền mặt hoặc chuyển khoản -> hệ thống tự đóng phiên, giải phóng khóa và cập nhật sơ đồ bàn.
 - Thử hai nhân viên nhận cùng bàn hoặc gọi món khi nhân viên khác giữ khóa: phải bị chặn.
-- Khi có phiên đang phục vụ, quản trị không thể tự đổi trạng thái bàn hoặc ngừng sử dụng bàn; thu ngân yêu cầu phục vụ trả quyền trước khi đóng phiên.
+- Khi có phiên đang phục vụ, quản trị không thể tự đổi trạng thái bàn hoặc ngừng sử dụng bàn; sau khi tất cả món đã phục vụ, thu ngân có thể xác nhận thanh toán mà không phải đợi phục vụ trả khóa thao tác.
 
 ## Còn cần chuyển từ KLCN để đạt đầy đủ nghiệp vụ
 
