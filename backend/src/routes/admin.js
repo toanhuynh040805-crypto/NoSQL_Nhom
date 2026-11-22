@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import { isValidObjectId } from 'mongoose';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -131,21 +133,185 @@ router.post('/foods/:id/image', requireRole('admin'), asyncHandler(async (req, r
   res.json({ food });
 }));
 
+
+const employeeRoles = ['admin', 'staff', 'kitchen', 'cashier'];
+const employeeRoleSchema = z.enum(['admin', 'staff', 'kitchen', 'cashier']);
+const publicDirectoryFields = 'fullName email phone role isActive loyaltyPoints createdAt updatedAt';
+const staffFields = 'fullName email phone role isActive createdAt updatedAt';
+const staffCreateSchema = z.strictObject({
+  fullName: z.string().trim().min(2).max(80),
+  email: z.email().transform(email => email.trim().toLowerCase()),
+  phone: z.string().trim().max(20).default(''),
+  password: z.string().min(8).max(128),
+  role: employeeRoleSchema.default('staff')
+});
+const staffPatchSchema = z.strictObject({
+  fullName: z.string().trim().min(2).max(80).optional(),
+  email: z.email().transform(email => email.trim().toLowerCase()).optional(),
+  phone: z.string().trim().max(20).optional(),
+  role: employeeRoleSchema.optional(),
+  isActive: z.boolean().optional()
+});
+
+const validUserId = id => {
+  if (!isValidObjectId(id)) throw new AppError(400, 'Mã tài khoản không hợp lệ');
+  return id;
+};
+
+async function assertAdminContinuity(target, nextRole, nextActive, actorId) {
+  if (String(target._id) === String(actorId) && (nextRole !== 'admin' || !nextActive)) {
+    throw new AppError(409, 'Không thể tự khóa hoặc tự bỏ quyền quản trị đang sử dụng');
+  }
+  if (target.role === 'admin' && target.isActive && (nextRole !== 'admin' || !nextActive)) {
+    if ((await User.countDocuments({ role: 'admin', isActive: true })) <= 1) {
+      throw new AppError(409, 'Cần giữ ít nhất một quản trị viên đang hoạt động');
+    }
+  }
+}
+
+// Customers and restaurant personnel are separate administrative directories,
+// but remain in the existing users collection to preserve Order/Reservation refs.
+router.get('/customers', requireRole('admin'), asyncHandler(async (_req, res) => {
+  const customers = await User.find({ role: 'customer' })
+    .select(publicDirectoryFields).sort({ createdAt: -1 }).limit(500).lean();
+  const customerIds = customers.map(customer => customer._id);
+  if (!customerIds.length) return res.json({ customers: [], summary: { total: 0, active: 0, locked: 0 } });
+
+  const [orderCounts, reservations] = await Promise.all([
+    Order.aggregate([
+      { $match: { customer: { $in: customerIds }, status: { $ne: 'cancelled' } } },
+      { $group: {
+        _id: '$customer', orderCount: { $sum: 1 },
+        paidAmount: { $sum: {
+          $cond: [{ $eq: ['$paymentStatus', 'paid'] }, '$totalAmount', 0]
+        } }
+      } }
+    ]),
+    Reservation.aggregate([
+      { $match: { customer: { $in: customerIds } } },
+      { $group: { _id: '$customer', reservationCount: { $sum: 1 } } }
+    ])
+  ]);
+  const ordersById = new Map(orderCounts.map(item => [String(item._id), item]));
+  const bookingById = new Map(reservations.map(item => [String(item._id), item.reservationCount]));
+  res.json({
+    customers: customers.map(customer => ({
+      ...customer,
+      orderCount: ordersById.get(String(customer._id))?.orderCount || 0,
+      paidAmount: ordersById.get(String(customer._id))?.paidAmount || 0,
+      reservationCount: bookingById.get(String(customer._id)) || 0
+    })),
+    summary: {
+      total: customers.length, active: customers.filter(item => item.isActive).length,
+      locked: customers.filter(item => !item.isActive).length
+    }
+  });
+}));
+
+router.patch('/customers/:id', requireRole('admin'), asyncHandler(async (req, res) => {
+  const body = z.strictObject({ isActive: z.boolean() }).parse(req.body);
+  const customer = await User.findOneAndUpdate(
+    { _id: validUserId(req.params.id), role: 'customer' },
+    { $set: body }, { new: true, runValidators: true }
+  ).select(publicDirectoryFields);
+  if (!customer) throw new AppError(404, 'Không tìm thấy tài khoản khách hàng');
+  res.json({ customer });
+}));
+
+router.get('/employees', requireRole('admin'), asyncHandler(async (_req, res) => {
+  const employees = await User.find({ role: { $in: employeeRoles } })
+    .select(staffFields).sort({ createdAt: -1 }).limit(300).lean();
+  res.json({
+    employees,
+    summary: {
+      total: employees.length,
+      active: employees.filter(employee => employee.isActive).length,
+      locked: employees.filter(employee => !employee.isActive).length,
+      byRole: employeeRoles.reduce((acc, role) => ({
+        ...acc, [role]: employees.filter(employee => employee.role === role).length
+      }), {})
+    }
+  });
+}));
+
+router.post('/employees', requireRole('admin'), asyncHandler(async (req, res) => {
+  const body = staffCreateSchema.parse(req.body);
+  if (await User.exists({ email: body.email })) {
+    throw new AppError(409, 'Email đã được sử dụng');
+  }
+  try {
+    const employee = await User.create({
+      fullName: body.fullName, email: body.email, phone: body.phone,
+      role: body.role, isActive: true, passwordHash: await bcrypt.hash(body.password, 11)
+    });
+    res.status(201).json({
+      employee: {
+        _id: employee._id, fullName: employee.fullName, email: employee.email,
+        phone: employee.phone, role: employee.role, isActive: employee.isActive,
+        createdAt: employee.createdAt
+      }
+    });
+  } catch (error) {
+    if (error.code === 11000) throw new AppError(409, 'Email đã được sử dụng');
+    throw error;
+  }
+}));
+
+router.patch('/employees/:id', requireRole('admin'), asyncHandler(async (req, res) => {
+  const body = staffPatchSchema.parse(req.body);
+  if (Object.keys(body).length === 0) throw new AppError(400, 'Chưa chọn thông tin cần cập nhật');
+  const id = validUserId(req.params.id);
+  const previous = await User.findOne({ _id: id, role: { $in: employeeRoles } });
+  if (!previous) throw new AppError(404, 'Không tìm thấy tài khoản nhân viên');
+  await assertAdminContinuity(
+    previous, body.role ?? previous.role, body.isActive ?? previous.isActive, req.user._id
+  );
+  if (body.email && body.email !== previous.email &&
+    await User.exists({ email: body.email, _id: { $ne: previous._id } })) {
+    throw new AppError(409, 'Email đã được sử dụng');
+  }
+  try {
+    const employee = await User.findOneAndUpdate(
+      { _id: id, role: { $in: employeeRoles } },
+      { $set: body }, { new: true, runValidators: true }
+    ).select(staffFields);
+    if (!employee) throw new AppError(409, 'Tài khoản vừa được cập nhật, hãy tải lại');
+    res.json({ employee });
+  } catch (error) {
+    if (error.code === 11000) throw new AppError(409, 'Email đã được sử dụng');
+    throw error;
+  }
+}));
+
 router.get('/users', requireRole('admin'), asyncHandler(async (req, res) => {
   const filter = req.query.role && req.query.role !== 'all' ? { role: req.query.role } : {};
   const users = await User.find(filter).select('-passwordHash').sort({ createdAt: -1 }).limit(300).lean();
   res.json({ users });
 }));
 
+// Backward-compatible legacy endpoint, with account-type boundaries enforced.
 router.patch('/users/:id', requireRole('admin'), asyncHandler(async (req, res) => {
-  const body = z.object({
+  const body = z.strictObject({
     role: z.enum(['customer', 'admin', 'staff', 'kitchen', 'cashier']).optional(),
     isActive: z.boolean().optional()
   }).parse(req.body);
-  if (String(req.user._id) === req.params.id && body.isActive === false) throw new AppError(400, 'Không thể khóa chính tài khoản đang sử dụng');
-  const user = await User.findByIdAndUpdate(req.params.id, body, { new: true, runValidators: true }).select('-passwordHash');
+  if (!Object.keys(body).length) throw new AppError(400, 'Chưa chọn thông tin cần cập nhật');
+  const user = await User.findById(validUserId(req.params.id));
   if (!user) throw new AppError(404, 'Không tìm thấy người dùng');
-  res.json({ user });
+  const nextRole = body.role ?? user.role;
+  const nextActive = body.isActive ?? user.isActive;
+  if ((user.role === 'customer') !== (nextRole === 'customer')) {
+    throw new AppError(409, 'Không thể chuyển trực tiếp khách hàng thành nhân viên hoặc ngược lại');
+  }
+  if (user.role !== 'customer') {
+    await assertAdminContinuity(user, nextRole, nextActive, req.user._id);
+  } else if (String(user._id) === String(req.user._id) && body.isActive === false) {
+    throw new AppError(409, 'Không thể tự khóa tài khoản');
+  }
+  const updatedUser = await User.findByIdAndUpdate(
+    user._id, { $set: body }, { new: true, runValidators: true }
+  ).select(publicDirectoryFields);
+  res.json({ user: updatedUser });
 }));
 
 router.get('/reports', requireRole('admin', 'cashier'), asyncHandler(async (req, res) => {
