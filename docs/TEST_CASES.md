@@ -58,6 +58,12 @@
 | TC43 | Hệ thống | MongoDB/Redis/Neo4j bị tắt | Có cảnh báo/chẩn đoán được lỗi kết nối | M |
 | TC44 | Giao diện | Desktop và mobile thử đặt món, sơ đồ bàn | Không che chữ, không tràn viewport | M |
 | TC45 | An toàn | Đổi giá frontend gửi giả | Backend vẫn đọc giá MongoDB | M |
+| TC46 | Khách hàng | GET `/api/admin/customers` | Chỉ có role customer, số đơn và số lượt đặt bàn, không trả hash mật khẩu | A |
+| TC47 | Nhân viên | GET `/api/admin/employees` | Chỉ có admin/staff/kitchen/cashier | A |
+| TC48 | Nhân viên | Admin tạo tài khoản nhân viên mới | Mật khẩu hash, trả thông tin không có passwordHash | A |
+| TC49 | Nhân viên | Đổi bộ phận và khóa tài khoản | Role và isActive đổi đúng, không xóa bản ghi | A |
+| TC50 | Phân quyền | Staff/khách gọi endpoint danh bạ quản trị | HTTP 403 | A |
+| TC51 | Bảo vệ tài khoản | Admin tự khóa chính mình hoặc đổi khách thành nhân viên qua API cũ | HTTP 409 | A |
 
 **A không có nghĩa PASS ở mọi máy.** Cần đối chiếu log workflow của commit mới, ảnh chạy ứng dụng và report thực tế tại thời điểm nộp.
 
