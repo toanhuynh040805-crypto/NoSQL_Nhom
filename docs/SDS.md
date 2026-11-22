@@ -31,6 +31,7 @@ Các container được khai báo tại `docker-compose.yml`. Backend `backend/s
 | `frontend/src/pages/OperationsPage.jsx` | Vận hành, báo cáo và tab CSDL NoSQL |
 | `backend/src/app.js` | Khai báo các nhóm API |
 | `backend/src/routes/auth.js` | JWT, bcrypt, đăng xuất Redis |
+| `backend/src/routes/admin.js` | API quản trị `/customers`, `/employees`, thống kê khách hàng; tạo/chỉnh nhân viên bằng bcrypt, bảo vệ quyền admin |
 | `backend/src/routes/catalog.js` | MongoDB + cache Redis |
 | `backend/src/routes/cart.js` / `services/cart.js` | Giỏ hàng Redis |
 | `backend/src/routes/orders.js` | Đơn khách, cập nhật đơn, đồng bộ graph |
