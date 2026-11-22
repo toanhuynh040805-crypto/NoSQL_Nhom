@@ -29,12 +29,12 @@ Các biến trên là thông tin tài khoản **nhận** để hiển thị cho 
 
 1. Đăng nhập `thungan@quanan.vn` (mẫu sau seed).
 2. Vào `/staff/tables` → chọn bàn đang phục vụ.
-3. Món đã được bếp và phục vụ đánh dấu hoàn thành. Nhân viên phục vụ trả quyền thao tác Redis của phiên bàn.
+3. Món đã được bếp và phục vụ đánh dấu hoàn thành; thu ngân không cần yêu cầu phục vụ trả khóa bàn trước khi thanh toán.
 4. Bấm **Thu tiền toàn bộ hóa đơn**, hệ thống tính tổng tiền các lượt món chưa thanh toán trong `TableSession`.
 5. **Tiền mặt:** nhập tiền khách đưa; backend bắt buộc đủ tiền và tính lại số thối trên máy chủ.
-6. **Chuyển khoản:** hiển thị VietQR BIDV với **đúng số tiền phải thu** và mã nội dung riêng `TTBAN<sessionId>`. Thu ngân mở ứng dụng ngân hàng, xác nhận tiền đã về, nhập mã giao dịch thực nhận, đánh dấu đã đối chiếu.
+6. **Chuyển khoản:** hiển thị VietQR BIDV với **đúng số tiền phải thu** và mã nội dung riêng `TTBAN<sessionId>`. Thu ngân kiểm tra trên ứng dụng ngân hàng **tiền thực nhận**, tích ô xác nhận rồi bấm xác nhận chuyển khoản. Có thể nhập mã giao dịch nếu ngân hàng hiển thị; trường này không bắt buộc.
 7. Backend tạo `PaymentReceipt` trong MongoDB, ghi người nhận/giờ/phương thức, đánh dấu toàn bộ các `Order` thuộc hóa đơn đã thanh toán và cập nhật `TableSession.paymentState=paid`.
-8. Thu ngân bấm **Kết thúc phiên & trả bàn**. Khi đã thanh toán, không được thêm/chỉnh món hoặc tự chuyển phiên bàn.
+8. **Tự động trả bàn:** ngay sau khi ghi nhận phiếu thu, server đóng `TableSession`, xóa khóa thao tác Redis và cập nhật bàn về `available` hoặc `reserved` nếu có lịch xác nhận trong khoảng gần giờ hẹn. Không còn nút trả bàn riêng ở giao diện thu ngân.
 
 **Không được bấm xác nhận chuyển khoản khi chỉ thấy ảnh giao dịch hoặc lời thông báo từ khách.** Phải đối chiếu tiền thực nhận trên tài khoản ngân hàng quán.
 
@@ -78,7 +78,7 @@ Ví dụ xác nhận tiền chuyển khoản sau **khi đã đối chiếu tiề
 }
 ```
 
-Mọi giá trị phải được server tính và kiểm tra lại, không tin số tiền hoặc xác nhận chỉ từ frontend. Redis khóa thao tác xác nhận, MongoDB `PaymentReceipt` có unique index theo hóa đơn + mã giao dịch ngân hàng; nếu request bị lặp, backend trả biên nhận cũ thay vì thu tiền lần hai.
+Nút chuyển khoản chỉ được bật khi thu ngân tích xác nhận đã đối chiếu tiền thực nhận, và mọi món của phiên bàn đã hoàn tất phục vụ. Mã giao dịch là tùy chọn; số tài khoản nhận, số tiền, mã chuyển khoản luôn được dựng từ server. Mọi giá trị phải được server tính và kiểm tra lại, không tin số tiền hoặc xác nhận chỉ từ frontend. Redis khóa thao tác xác nhận, MongoDB `PaymentReceipt` có unique index theo hóa đơn + mã giao dịch ngân hàng; nếu request bị lặp, backend trả biên nhận cũ thay vì thu tiền lần hai.
 
 ## Giới hạn quan trọng
 
