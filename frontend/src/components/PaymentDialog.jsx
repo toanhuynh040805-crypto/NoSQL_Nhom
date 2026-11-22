@@ -44,7 +44,7 @@ export default function PaymentDialog({
       const result = await api('/api/payments/' + scope + '/' + id + '/confirm', {
         method: 'POST', body: JSON.stringify(body)
       });
-      if (onPaid) await onPaid(result.receipt);
+      if (onPaid) await onPaid(result.receipt, result);
       onClose();
     } catch (e) {
       // A stale quote or an interrupted request must not declare success.
@@ -96,8 +96,8 @@ export default function PaymentDialog({
             </div>
             <p className="payment-notice">Quét QR chỉ tạo lệnh chuyển khoản, không tự xác nhận tiền đã về tài khoản. Cần chuyển đúng số tiền và nội dung.</p>
             {!readOnly && <>
-              <label>Mã giao dịch thực nhận trên ứng dụng ngân hàng
-                <input maxLength={100} minLength={5} placeholder="Nhập mã giao dịch sau khi đã nhận tiền"
+              <label>Mã giao dịch ngân hàng (nếu có)
+                <input maxLength={100} placeholder="Có thể để trống nếu ngân hàng không hiển thị mã"
                   value={bankTransactionRef} onChange={e => setBankTransactionRef(e.target.value)}/>
               </label>
               <label className="payment-verified"><input type="checkbox" checked={bankVerified}
@@ -107,11 +107,13 @@ export default function PaymentDialog({
             </>}
           </div>}
           {!readOnly && <div className="payment-confirm">
-            {!quote.allServed && scope === 'session' && <p>Chưa thể thu tiền: có món chưa hoàn thành phục vụ.</p>}
+            {!quote.allServed && scope === 'session' && <p>Chưa thể thu tiền: nhân viên cần đánh dấu các món đã phục vụ xong.</p>}
+            {method === 'bank-transfer' && !bankVerified && <p>Để mở nút xác nhận: kiểm tra tiền thực nhận trong ứng dụng BIDV và tích ô xác nhận phía trên. Không bắt buộc nhập mã giao dịch nếu ngân hàng không hiển thị.</p>}
+            {scope === 'session' && <p>Sau khi xác nhận thành công, bàn sẽ tự động trả về Trống hoặc Đã đặt theo lịch tiếp theo.</p>}
             <button type="button" className="order-button" onClick={confirm}
               disabled={busy || !quote.allServed || quote.amount <= 0 ||
                 (method === 'cash' ? !Number.isInteger(Number(cashReceived)) || Number(cashReceived) < quote.amount
-                  : !bankVerified || bankTransactionRef.trim().length < 5)}>
+                  : !bankVerified)}>
               {busy ? 'Đang xác nhận...' : method === 'cash' ? 'Xác nhận đã nhận tiền mặt' : 'Xác nhận đã nhận chuyển khoản'}
             </button>
             <button type="button" className="secondary-button" onClick={() => load().catch(e => setError(e.message))} disabled={busy}><RefreshCw size={14}/> Tải lại số tiền</button>

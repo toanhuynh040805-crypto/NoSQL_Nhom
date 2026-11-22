@@ -179,15 +179,6 @@ export default function StaffTablesPage() {
     setDraft({});
   }, 'Đã chuyển bàn cùng toàn bộ lịch sử món');
 
-  const closeTable = () => {
-    if (!window.confirm('Kết thúc phiên và trả bàn sau khi tất cả món đã phục vụ, thanh toán?')) return;
-    return runAction(async () => {
-    await api('/api/staff/sessions/' + activeSessionId + '/close', { method: 'PATCH' });
-    setSessionData(null);
-    setChosenId(null);
-    setDraft({});
-    }, 'Đã kết thúc phiên phục vụ và cập nhật bàn');
-  };
 
   const areaNames = [...new Set(tables.map(t => t.area))];
   const visibleTables = tables.filter(table => areas === 'all' || table.area === areas);
@@ -207,7 +198,7 @@ export default function StaffTablesPage() {
   const isOwner = Boolean(lock && String(lock.ownerId) === String(user?.id));
   const orders = sessionData?.orders || [];
   const payable = orders.filter(o => o.status !== 'cancelled');
-  const canClose = payable.every(o => o.status === 'completed' && o.paymentStatus === 'paid');
+
   if (!authReady) {
     return <div className="page"><div className="empty">Đang xác thực tài khoản nhân viên...</div></div>;
   }
@@ -303,12 +294,12 @@ export default function StaffTablesPage() {
                 {sessionData.session.reservation && <small>Bàn thuộc lịch đặt đã nhận: không tự chuyển để tránh sai thông tin đặt bàn.</small>}
               </div>}
               {canCashier && <div className="staff-close">
-                <p>{canClose ? 'Đã hoàn tất phục vụ và thanh toán các đơn.' : 'Chưa thể trả bàn: còn đơn chưa phục vụ hoặc chưa thanh toán.'}</p>
+                <p>Sau khi thu ngân xác nhận đã nhận tiền, hệ thống sẽ tự trả bàn về Trống hoặc Đã đặt theo lịch tiếp theo.</p>
                 {payable.some(o => o.paymentStatus !== 'paid') && <button type="button" className="order-button" onClick={() => setPaymentOpen(true)} disabled={busy}>
                   <CreditCard size={16}/> Thu tiền toàn bộ hóa đơn · {money(payable.filter(o => o.paymentStatus !== 'paid').reduce((sum,o) => sum + o.totalAmount, 0))}
                 </button>}
                 {sessionData.session.paymentReceipt && <button className="secondary-button" onClick={() => setPaymentOpen(true)}>Xem phiếu thu đã thanh toán</button>}
-                <button className="order-button" onClick={closeTable} disabled={busy || !canClose}>Kết thúc phiên & trả bàn</button>
+
               </div>}
               {canServe && sessionData.session.paymentState !== 'paid' && <>
                 <div className="staff-section-head"><h3><ChefHat size={18}/> Gọi thêm món</h3><span>{draftCount} món đang chọn</span></div>
@@ -332,10 +323,14 @@ export default function StaffTablesPage() {
     </div>
     {paymentOpen && activeSessionId && <PaymentDialog scope="session" id={activeSessionId}
       onClose={() => setPaymentOpen(false)}
-      onPaid={async () => {
-        await loadSession(activeSessionId);
+      onPaid={async (_receipt, result) => {
+        setSessionData(null);
+        setChosenId(null);
+        setDraft({});
         await loadTables();
-        notify('Đã lập phiếu thu và ghi nhận thanh toán cho bàn');
+        notify(result.autoClosed
+          ? 'Đã xác nhận thanh toán và tự động trả bàn'
+          : 'Đã lập phiếu thu và ghi nhận thanh toán');
       }}/>}
   </section>;
 }
