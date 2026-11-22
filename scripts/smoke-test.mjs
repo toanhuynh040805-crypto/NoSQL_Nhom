@@ -56,6 +56,23 @@ await request('PATCH', '/api/admin/customers/' + customer.user.id, at, { role: '
 await request('PATCH', '/api/admin/users/' + customer.user.id, at, { role: 'staff' }, 409);
 await request('PATCH', '/api/admin/employees/' + admin.user.id, at, { isActive: false }, 409);
 
+const testStaffEmail = 'new-staff-' + randomUUID().slice(0, 12) + '@example.test';
+const testStaff = await request('POST', '/api/admin/employees', at, {
+  fullName: 'Nhân viên thử nghiệm', email: testStaffEmail, role: 'staff',
+  password: 'pass-test-2026'
+}, 201);
+assert.equal(testStaff.employee.role, 'staff');
+assert.ok(!('passwordHash' in testStaff.employee));
+const staffId = testStaff.employee._id;
+const updatedStaff = await request('PATCH', '/api/admin/employees/' + staffId, at, {
+  role: 'cashier', fullName: 'Nhân viên mới'
+});
+assert.equal(updatedStaff.employee.role, 'cashier');
+await request('PATCH', '/api/admin/employees/' + staffId, at, { isActive: false });
+const newAccount = await request('GET', '/api/admin/employees', at);
+assert.equal(newAccount.employees.find(item => item._id === staffId)?.isActive, false);
+
+
 
 const floors = await request('GET', '/api/staff/tables', st);
 const candidates = floors.tables.filter(t => t.status === 'available' && t.capacity >= 2);
