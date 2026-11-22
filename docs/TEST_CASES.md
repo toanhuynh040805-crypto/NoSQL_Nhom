@@ -41,10 +41,10 @@
 | TC26 | Thanh toán | QR BIDV đúng account/amount/reference | Thông tin trùng tạm tính | A |
 | TC27 | Thanh toán | Khách tự gọi API `confirm` | 403 | A |
 | TC28 | Thanh toán | Chuyển khoản không xác nhận đã nhận | API từ chối | A |
-| TC29 | Thanh toán | Thu ngân ghi chuyển khoản đã xác minh | Lưu phiếu thu, đơn paid | A |
+| TC29 | Thanh toán | Thu ngân ghi chuyển khoản đã xác minh (có hoặc không có mã giao dịch) | Lưu phiếu thu, đơn paid, phiên tự đóng và trả bàn | A |
 | TC30 | Thanh toán | Gửi lại yêu cầu thanh toán | Trả biên nhận cũ, không thu trùng | A |
-| TC31 | Bàn | Thu ngân đóng phiên khi staff đang khóa | 423 | A |
-| TC32 | Bàn | Đóng phiên sau phục vụ và thanh toán | Closed, bàn về trạng thái hợp lệ | A |
+| TC31 | Bàn | Thu ngân thanh toán khi staff vẫn giữ khóa sau khi tất cả món đã phục vụ | Thu tiền thành công, tự đóng phiên và xóa khóa thao tác | A |
+| TC32 | Bàn | Xác nhận thanh toán sau khi món đã phục vụ | Server tự động Closed, bàn về trạng thái Trống/Đã đặt | A |
 | TC33 | Bàn | Chuyển phiên sang bàn trống đủ chỗ | Chuyển cả lịch sử Order, giữ số khách | A |
 | TC34 | Đặt bàn | Lịch tương lai không khóa bàn hôm nay | Bàn còn available | A |
 | TC35 | Đặt bàn | Xác nhận lịch trùng cùng bàn/khung | 409 | A |
