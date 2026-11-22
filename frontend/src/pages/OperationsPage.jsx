@@ -1,9 +1,11 @@
-import { BarChart3, CalendarDays, ClipboardList, LayoutDashboard, PackageOpen, Percent, Table2, Tags, Utensils, UsersRound, Database, HardDrive, Network } from 'lucide-react';
+import { BarChart3, CalendarDays, ClipboardList, LayoutDashboard, PackageOpen, Percent, Table2, Tags, Utensils, UsersRound, BriefcaseBusiness, Database, HardDrive, Network } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 import { api, money } from '../lib/api.js';
 import PaymentDialog from '../components/PaymentDialog.jsx';
+import CustomerManagement from '../components/CustomerManagement.jsx';
+import EmployeeManagement from '../components/EmployeeManagement.jsx';
 
 const orderLabels = { pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', preparing: 'Đang chế biến', ready: 'Sẵn sàng', completed: 'Hoàn thành', cancelled: 'Đã hủy' };
 const reservationLabels = { pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', seated: 'Đã nhận bàn', completed: 'Hoàn thành', cancelled: 'Đã hủy', 'no-show': 'Không đến' };
@@ -18,7 +20,8 @@ const tabConfig = [
   ['inventory', 'Kho nguyên liệu', PackageOpen, ['admin', 'staff']],
   ['menu', 'Thực đơn', Utensils, ['admin']],
   ['categories', 'Danh mục', Tags, ['admin']],
-  ['users', 'Người dùng', UsersRound, ['admin']],
+  ['customers', 'Khách hàng', UsersRound, ['admin']],
+  ['employees', 'Nhân viên', BriefcaseBusiness, ['admin']],
   ['promotions', 'Khuyến mãi', Percent, ['admin']],
   ['reports', 'Báo cáo', BarChart3, ['admin', 'cashier']],
   ['nosql', 'CSDL NoSQL', Database, ['admin']]
@@ -51,7 +54,8 @@ export default function OperationsPage() {
         setData({ ...foods, ...categories });
       }
       if (activeTab === 'categories') setData(await api('/api/categories'));
-      if (activeTab === 'users') setData(await api('/api/admin/users'));
+      if (activeTab === 'customers') setData(await api('/api/admin/customers'));
+      if (activeTab === 'employees') setData(await api('/api/admin/employees'));
       if (activeTab === 'promotions') setData(await api('/api/promotions'));
       if (activeTab === 'reports') setData(await api('/api/admin/reports'));
       if (activeTab === 'nosql') setData(await api('/api/nosql/overview'));
@@ -62,8 +66,8 @@ export default function OperationsPage() {
   if (!permitted) return <Navigate to="/" replace />;
 
   const action = async (request, success) => {
-    try { await request(); notify(success); await load(); }
-    catch (error) { notify(error.message); }
+    try { await request(); notify(success); await load(); return true; }
+    catch (error) { notify(error.message); return false; }
   };
 
   return <section className="operations-page">
@@ -82,7 +86,8 @@ function TabContent({ tab, data, user, action }) {
   if (tab === 'inventory') return <Inventory data={data} user={user} action={action}/>;
   if (tab === 'menu') return <MenuManagement data={data} action={action}/>;
   if (tab === 'categories') return <CategoryManagement data={data} action={action}/>;
-  if (tab === 'users') return <Users data={data} action={action}/>;
+  if (tab === 'customers') return <CustomerManagement data={data} action={action}/>;
+  if (tab === 'employees') return <EmployeeManagement data={data} user={user} action={action}/>;
   if (tab === 'promotions') return <Promotions data={data} action={action}/>;
   if (tab === 'reports') return <Reports data={data}/>;
   if (tab === 'nosql') return <NoSQLOverview data={data}/>;
@@ -132,9 +137,6 @@ function CategoryManagement({ data, action }) {
   return <><div className="toolbar"><button className="primary-button compact-button" onClick={add}>+ Thêm danh mục</button></div><div className="simple-card-list">{(data.categories || []).map(item => <article key={item._id}><Tags/><div><h3>{item.name}</h3><p>{item.description}</p></div><span>{item.type === 'drink' ? 'Đồ uống' : 'Món ăn'}</span></article>)}</div></>;
 }
 
-function Users({ data, action }) {
-  return <div className="admin-table-wrap"><table><thead><tr><th>Người dùng</th><th>Liên hệ</th><th>Vai trò</th><th>Trạng thái</th></tr></thead><tbody>{(data.users || []).map(item => <tr key={item._id}><td><b>{item.fullName}</b><small>{item.loyaltyPoints || 0} điểm</small></td><td>{item.email}<small>{item.phone}</small></td><td><select value={item.role} onChange={e => action(() => api(`/api/admin/users/${item._id}`, { method: 'PATCH', body: JSON.stringify({ role: e.target.value }) }), 'Đã đổi vai trò')}>{Object.entries(roleLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></td><td><button className={`toggle-button ${item.isActive ? 'active' : ''}`} onClick={() => action(() => api(`/api/admin/users/${item._id}`, { method: 'PATCH', body: JSON.stringify({ isActive: !item.isActive }) }), 'Đã cập nhật tài khoản')}>{item.isActive ? 'Hoạt động' : 'Đã khóa'}</button></td></tr>)}</tbody></table></div>;
-}
 
 function Promotions({ data, action }) {
   const add = () => { const name = prompt('Tên chương trình:'); const code = prompt('Mã khuyến mãi:'); if (!name || !code) return; const discountValue = Number(prompt('Phần trăm giảm:', '10')); const minOrderValue = Number(prompt('Giá trị đơn tối thiểu:', '200000')); const startAt = new Date().toISOString(); const endAt = new Date(Date.now() + 30 * 86400000).toISOString(); action(() => api('/api/promotions', { method: 'POST', body: JSON.stringify({ name, code, discountType: 'percent', discountValue, minOrderValue, startAt, endAt, description: '', isActive: true }) }), 'Đã tạo khuyến mãi'); };
