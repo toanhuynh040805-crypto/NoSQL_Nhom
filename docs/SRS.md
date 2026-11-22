@@ -64,7 +64,7 @@ Ký hiệu: **Đã có** = đã tìm thấy route/model và có thể kiểm th�
 | FR22 | Hiển thị QR BIDV số tiền/nội dung hóa đơn; thu ngân đối chiếu | Thu ngân, khách | Đã có (thủ công) |
 | FR23 | Chặn thu trùng, chặn gọi thêm sau thanh toán, trả bàn | Thu ngân | Đã có |
 | FR24 | Quản lý danh mục/món và hình ảnh | Quản lý | Đã có |
-| FR25 | Quản lý tài khoản và vai trò | Quản lý | Đã có |
+| FR25 | Quản lý riêng khách hàng (hồ sơ, số đơn, đặt bàn, chi tiêu, điểm, khóa/mở) và nhân viên (tạo tài khoản, bộ phận, sửa, khóa/mở) | Quản lý | Đã có |
 | FR26 | Quản lý kho, tồn và cảnh báo | Quản lý | Đã có |
 | FR27 | Quản lý mã khuyến mãi | Quản lý | Đã có |
 | FR28 | Dashboard doanh thu và món bán chạy | Quản lý, thu ngân | Đã có cơ bản |

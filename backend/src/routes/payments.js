@@ -9,6 +9,7 @@ import { TableSession } from '../models/TableSession.js';
 import { PaymentReceipt } from '../models/PaymentReceipt.js';
 import { transferInstructions } from '../services/paymentBank.js';
 import { notifyUser } from '../services/notifications.js';
+import { finishPaidTableSession } from '../services/tableSettlement.js';
 import { AppError, asyncHandler } from '../utils/errors.js';
 
 const router = Router();
@@ -108,7 +109,8 @@ const confirmSchema = z.discriminatedUnion('method', [
     method: z.literal('bank-transfer'),
     expectedAmount: z.coerce.number().int().min(1),
     bankVerifiedManually: z.literal(true),
-    bankTransactionRef: z.string().trim().min(5).max(100),
+    // Optional: some bank receipts show no reference code to the cashier.
+    bankTransactionRef: z.string().trim().max(100).optional(),
     requestId: z.string().uuid()
   })
 ]);
@@ -128,7 +130,10 @@ router.post('/:scope/:id/confirm', cashier, asyncHandler(async (req, res) => {
     const previous = await PaymentReceipt.findOne({ scopeType: scope, scopeId });
     if (previous) {
       await applyRecordedPayment(previous, bill);
-      return res.json({ receipt: previous, duplicate: true });
+      const settlement = bill.scopeType === 'session'
+        ? await finishPaidTableSession({ sessionId: bill.scopeId, actorId: req.user._id })
+        : null;
+      return res.json({ receipt: previous, duplicate: true, tableStatus: settlement?.tableStatus, autoClosed: Boolean(settlement) });
     }
     if (bill.scopeType === 'session') {
       if (bill.session.status !== 'active' || bill.session.paymentState === 'paid') {
@@ -136,10 +141,9 @@ router.post('/:scope/:id/confirm', cashier, asyncHandler(async (req, res) => {
       }
       if (!bill.orders.length) throw new AppError(409, 'Bàn chưa có món');
       if (!bill.allServed) throw new AppError(409, 'Vẫn còn món chưa được phục vụ xong');
-      const tableLockOwner = await redis.get('table:lock:' + scopeId);
-      if (tableLockOwner && tableLockOwner !== String(req.user._id)) {
-        throw new AppError(423, 'Nhân viên phục vụ đang giữ bàn, hãy trả quyền thao tác trước');
-      }
+      // The cashier can finish a fully served table even when a waiter still
+      // holds the old edit lock. The payment lock blocks new waiter orders;
+      // closing the session then removes that lock automatically.
     }
     if (!Number.isSafeInteger(bill.amount) || bill.amount <= 0) {
       throw new AppError(409, 'Hóa đơn đã thanh toán hoặc không có tiền phải thu');
@@ -158,7 +162,8 @@ router.post('/:scope/:id/confirm', cashier, asyncHandler(async (req, res) => {
         amount: bill.amount, method: body.method,
         ...(body.method === 'cash'
           ? { cashReceived: body.cashReceived, changeAmount: body.cashReceived - bill.amount }
-          : { transferContent: transfer.content, bankTransactionRef: body.bankTransactionRef,
+          : { transferContent: transfer.content,
+              ...(body.bankTransactionRef ? { bankTransactionRef: body.bankTransactionRef } : {}),
               bankVerifiedManually: true }),
         confirmedBy: req.user._id, verifiedAt: new Date(), requestId: body.requestId
       });
@@ -169,6 +174,9 @@ router.post('/:scope/:id/confirm', cashier, asyncHandler(async (req, res) => {
       receipt = existing;
     }
     await applyRecordedPayment(receipt, bill);
+    const settlement = bill.scopeType === 'session'
+      ? await finishPaidTableSession({ sessionId: bill.scopeId, actorId: req.user._id })
+      : null;
     if (bill.scopeType === 'order' && bill.order.customer) {
       await notifyUser(bill.order.customer, {
         type: 'order', title: 'Đã xác nhận thanh toán',
@@ -176,7 +184,7 @@ router.post('/:scope/:id/confirm', cashier, asyncHandler(async (req, res) => {
         link: '/orders'
       }).catch(() => {});
     }
-    res.status(201).json({ receipt, duplicate: false });
+    res.status(201).json({ receipt, duplicate: false, tableStatus: settlement?.tableStatus, autoClosed: Boolean(settlement) });
   } finally {
     await redis.eval(
       'if redis.call("GET", KEYS[1]) == ARGV[1] then return redis.call("DEL", KEYS[1]) else return 0 end',

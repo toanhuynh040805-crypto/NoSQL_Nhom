@@ -41,10 +41,10 @@
 | TC26 | Thanh toán | QR BIDV đúng account/amount/reference | Thông tin trùng tạm tính | A |
 | TC27 | Thanh toán | Khách tự gọi API `confirm` | 403 | A |
 | TC28 | Thanh toán | Chuyển khoản không xác nhận đã nhận | API từ chối | A |
-| TC29 | Thanh toán | Thu ngân ghi chuyển khoản đã xác minh | Lưu phiếu thu, đơn paid | A |
+| TC29 | Thanh toán | Thu ngân ghi chuyển khoản đã xác minh (có hoặc không có mã giao dịch) | Lưu phiếu thu, đơn paid, phiên tự đóng và trả bàn | A |
 | TC30 | Thanh toán | Gửi lại yêu cầu thanh toán | Trả biên nhận cũ, không thu trùng | A |
-| TC31 | Bàn | Thu ngân đóng phiên khi staff đang khóa | 423 | A |
-| TC32 | Bàn | Đóng phiên sau phục vụ và thanh toán | Closed, bàn về trạng thái hợp lệ | A |
+| TC31 | Bàn | Thu ngân thanh toán khi staff vẫn giữ khóa sau khi tất cả món đã phục vụ | Thu tiền thành công, tự đóng phiên và xóa khóa thao tác | A |
+| TC32 | Bàn | Xác nhận thanh toán sau khi món đã phục vụ | Server tự động Closed, bàn về trạng thái Trống/Đã đặt | A |
 | TC33 | Bàn | Chuyển phiên sang bàn trống đủ chỗ | Chuyển cả lịch sử Order, giữ số khách | A |
 | TC34 | Đặt bàn | Lịch tương lai không khóa bàn hôm nay | Bàn còn available | A |
 | TC35 | Đặt bàn | Xác nhận lịch trùng cùng bàn/khung | 409 | A |
@@ -58,6 +58,12 @@
 | TC43 | Hệ thống | MongoDB/Redis/Neo4j bị tắt | Có cảnh báo/chẩn đoán được lỗi kết nối | M |
 | TC44 | Giao diện | Desktop và mobile thử đặt món, sơ đồ bàn | Không che chữ, không tràn viewport | M |
 | TC45 | An toàn | Đổi giá frontend gửi giả | Backend vẫn đọc giá MongoDB | M |
+| TC46 | Khách hàng | GET `/api/admin/customers` | Chỉ có role customer, số đơn và số lượt đặt bàn, không trả hash mật khẩu | A |
+| TC47 | Nhân viên | GET `/api/admin/employees` | Chỉ có admin/staff/kitchen/cashier | A |
+| TC48 | Nhân viên | Admin tạo tài khoản nhân viên mới | Mật khẩu hash, trả thông tin không có passwordHash | A |
+| TC49 | Nhân viên | Đổi bộ phận và khóa tài khoản | Role và isActive đổi đúng, không xóa bản ghi | A |
+| TC50 | Phân quyền | Staff/khách gọi endpoint danh bạ quản trị | HTTP 403 | A |
+| TC51 | Bảo vệ tài khoản | Admin tự khóa chính mình hoặc đổi khách thành nhân viên qua API cũ | HTTP 409 | A |
 
 **A không có nghĩa PASS ở mọi máy.** Cần đối chiếu log workflow của commit mới, ảnh chạy ứng dụng và report thực tế tại thời điểm nộp.
 

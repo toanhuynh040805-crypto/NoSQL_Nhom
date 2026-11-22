@@ -43,6 +43,37 @@ await request('GET', '/api/nosql/overview', ut, undefined, 403);
 await request('GET', '/api/staff/tables', ut, undefined, 403);
 await request('GET', '/api/staff/tables', kt, undefined, 403);
 
+const directoryCustomers = await request('GET', '/api/admin/customers', at);
+assert.ok(directoryCustomers.customers.some(item => item._id === customer.user.id));
+assert.ok(directoryCustomers.customers.every(item => item.role === 'customer'));
+assert.ok(directoryCustomers.customers.every(item => !('passwordHash' in item)));
+const directoryEmployees = await request('GET', '/api/admin/employees', at);
+assert.ok(directoryEmployees.employees.some(item => item._id === admin.user.id));
+assert.ok(directoryEmployees.employees.every(item => item.role !== 'customer'));
+await request('GET', '/api/admin/customers', st, undefined, 403);
+await request('GET', '/api/admin/employees', ut, undefined, 403);
+await request('PATCH', '/api/admin/customers/' + customer.user.id, at, { role: 'admin' }, 400);
+await request('PATCH', '/api/admin/users/' + customer.user.id, at, { role: 'staff' }, 409);
+await request('PATCH', '/api/admin/employees/' + admin.user.id, at, { isActive: false }, 409);
+
+const testStaffEmail = 'new-staff-' + randomUUID().slice(0, 12) + '@example.test';
+const testStaff = await request('POST', '/api/admin/employees', at, {
+  fullName: 'Nhân viên thử nghiệm', email: testStaffEmail, role: 'staff',
+  password: 'pass-test-2026'
+}, 201);
+assert.equal(testStaff.employee.role, 'staff');
+assert.ok(!('passwordHash' in testStaff.employee));
+const staffId = testStaff.employee._id;
+const updatedStaff = await request('PATCH', '/api/admin/employees/' + staffId, at, {
+  role: 'cashier', fullName: 'Nhân viên mới'
+});
+assert.equal(updatedStaff.employee.role, 'cashier');
+await request('PATCH', '/api/admin/employees/' + staffId, at, { isActive: false });
+const newAccount = await request('GET', '/api/admin/employees', at);
+assert.equal(newAccount.employees.find(item => item._id === staffId)?.isActive, false);
+
+
+
 const floors = await request('GET', '/api/staff/tables', st);
 const candidates = floors.tables.filter(t => t.status === 'available' && t.capacity >= 2);
 assert.ok(candidates.length >= 4, 'need available sample tables');
@@ -87,12 +118,8 @@ assert.equal(billQuote.transfer.bankBin, '970418');
 assert.equal(billQuote.transfer.bankAccountNo, '5811704638');
 assert.match(billQuote.transfer.qrUrl, /img\.vietqr\.io/);
 await request('PATCH', '/api/orders/' + orderId + '/payment', ct, { paymentStatus: 'paid' }, 410);
-await request('POST', '/api/payments/session/' + sessionId + '/confirm', ct, {
-  method: 'cash', expectedAmount: billQuote.amount,
-  cashReceived: billQuote.amount + 50000, requestId: randomUUID()
-}, 423);
-await request('PATCH', '/api/staff/sessions/' + sessionId + '/close', ct, undefined, 423);
-await request('DELETE', '/api/staff/sessions/' + sessionId + '/lock', st, undefined, 204);
+// Cashier may settle a fully served table even while the waiter lock exists.
+// Payment confirmation now automatically closes the session and returns the table.
 const cashPaymentRequest = {
   method: 'cash', expectedAmount: billQuote.amount,
   cashReceived: billQuote.amount + 50000, requestId: randomUUID()
@@ -100,15 +127,18 @@ const cashPaymentRequest = {
 const cashPaid = await request('POST', '/api/payments/session/' + sessionId + '/confirm', ct, cashPaymentRequest, 201);
 assert.equal(cashPaid.receipt.changeAmount, 50000);
 assert.equal(cashPaid.receipt.method, 'cash');
+assert.equal(cashPaid.autoClosed, true, 'confirm payment must automatically close the table');
+assert.equal(cashPaid.tableStatus, 'available');
+await request('GET', '/api/staff/sessions/' + sessionId, ct, undefined, 404);
+await request('POST', '/api/staff/sessions/' + sessionId + '/orders', st, {
+  items: [item], clientRequestId: randomUUID()
+}, 404);
 const replay = await request('POST', '/api/payments/session/' + sessionId + '/confirm', ct, cashPaymentRequest);
 assert.equal(replay.duplicate, true, 'double submit must not produce another receipt');
-const settled = await request('GET', '/api/staff/sessions/' + sessionId, ct);
-assert.ok(settled.orders.every(order => order.paymentStatus === 'paid'));
-
-const closed = await request('PATCH', '/api/staff/sessions/' + sessionId + '/close', ct);
-assert.equal(closed.session.status, 'closed');
+assert.equal(replay.autoClosed, true, 'replay should preserve automatic table settlement');
 const after = await request('GET', '/api/staff/tables', st);
 assert.equal(after.tables.find(t => t._id === table._id)?.status, 'available');
+assert.equal(after.tables.find(t => t._id === table._id)?.activeSession, null);
 
 const second = await request('POST', '/api/staff/tables/' + other._id + '/open', st, {
   guestCount: 2
@@ -118,8 +148,26 @@ await request('PATCH', '/api/staff/sessions/' + second.session._id + '/transfer'
 });
 const transferred = await request('GET', '/api/staff/sessions/' + second.session._id, st);
 assert.equal(transferred.session.tableNumber, dest.name);
-await request('DELETE', '/api/staff/sessions/' + second.session._id + '/lock', st, undefined, 204);
-await request('PATCH', '/api/staff/sessions/' + second.session._id + '/close', ct);
+// Transfer payments accept a verified bank receipt without an optional transaction
+// reference, then automatically release the destination table.
+const wireTicket = await request('POST', '/api/staff/sessions/' + second.session._id + '/orders', st, {
+  items: [{ foodId: menu.foods[0]._id, quantity: 1 }],
+  priority: 'normal', clientRequestId: randomUUID()
+}, 201);
+await request('PATCH', '/api/orders/' + wireTicket.order._id + '/status', kt, { status: 'preparing' });
+await request('PATCH', '/api/orders/' + wireTicket.order._id + '/status', kt, { status: 'ready' });
+await request('PATCH', '/api/orders/' + wireTicket.order._id + '/status', st, { status: 'completed' });
+const wireTableQuote = (await request('GET', '/api/payments/session/' + second.session._id + '/quote', ct)).quote;
+const wireTablePayment = await request('POST', '/api/payments/session/' + second.session._id + '/confirm', ct, {
+  method: 'bank-transfer', expectedAmount: wireTableQuote.amount,
+  bankVerifiedManually: true, bankTransactionRef: '',
+  requestId: randomUUID()
+}, 201);
+assert.equal(wireTablePayment.receipt.method, 'bank-transfer');
+assert.equal(wireTablePayment.autoClosed, true);
+await request('GET', '/api/staff/sessions/' + second.session._id, ct, undefined, 404);
+const afterWireTable = await request('GET', '/api/staff/tables', ct);
+assert.equal(afterWireTable.tables.find(t => t._id === dest._id)?.status, 'available');
 
 const date = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
 const reserve = await request('POST', '/api/reservations', ut, {
@@ -166,4 +214,4 @@ const afterWire = (await request('GET', '/api/orders/mine', ut)).orders
   .find(order => order._id === takeaway.order._id);
 assert.equal(afterWire.paymentStatus, 'paid');
 assert.equal(afterWire.paymentMethod, 'bank-transfer');
-console.log('PASS: waiter, kitchen, cashier, cash change, VietQR, manually verified transfer, reservation conflicts.');
+console.log('PASS: payment auto-returns tables, bank transfer with optional reference, receipt idempotency, waiter/kitchen/cashier, reservations.');
