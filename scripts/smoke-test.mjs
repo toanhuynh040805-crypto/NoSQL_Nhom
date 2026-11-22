@@ -43,6 +43,20 @@ await request('GET', '/api/nosql/overview', ut, undefined, 403);
 await request('GET', '/api/staff/tables', ut, undefined, 403);
 await request('GET', '/api/staff/tables', kt, undefined, 403);
 
+const directoryCustomers = await request('GET', '/api/admin/customers', at);
+assert.ok(directoryCustomers.customers.some(item => item._id === customer.user.id));
+assert.ok(directoryCustomers.customers.every(item => item.role === 'customer'));
+assert.ok(directoryCustomers.customers.every(item => !('passwordHash' in item)));
+const directoryEmployees = await request('GET', '/api/admin/employees', at);
+assert.ok(directoryEmployees.employees.some(item => item._id === admin.user.id));
+assert.ok(directoryEmployees.employees.every(item => item.role !== 'customer'));
+await request('GET', '/api/admin/customers', st, undefined, 403);
+await request('GET', '/api/admin/employees', ut, undefined, 403);
+await request('PATCH', '/api/admin/customers/' + customer.user.id, at, { role: 'admin' }, 400);
+await request('PATCH', '/api/admin/users/' + customer.user.id, at, { role: 'staff' }, 409);
+await request('PATCH', '/api/admin/employees/' + admin.user.id, at, { isActive: false }, 409);
+
+
 const floors = await request('GET', '/api/staff/tables', st);
 const candidates = floors.tables.filter(t => t.status === 'available' && t.capacity >= 2);
 assert.ok(candidates.length >= 4, 'need available sample tables');
