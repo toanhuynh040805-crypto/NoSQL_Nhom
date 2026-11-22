@@ -29,6 +29,7 @@ Source này là dự án độc lập. Dữ liệu minh họa và một số ả
 
 - Dashboard khách hàng, món ăn, đơn đang xử lý, bàn, đặt bàn và doanh thu ngày.
 - Quản lý đơn hàng, thanh toán, quy trình xác nhận → chế biến → sẵn sàng → hoàn thành.
+- **Tách quản lý Khách hàng và Nhân viên** thành hai mục độc lập trong Vận hành (chỉ quản trị viên). Khách hàng có số đơn, lịch đặt, tổng tiền đã thanh toán, điểm tích lũy; nhân viên có bộ phận, tạo tài khoản, sửa hồ sơ, khóa/mở khóa và phân quyền.
 - Quản lý món, ảnh món, danh mục, bàn, đặt bàn, khách hàng, nhân viên và phân quyền.
 - Quản lý khuyến mãi và báo cáo doanh thu/món bán chạy theo thời gian.
 - Quản lý kho nguyên liệu, nhập/xuất kho và cảnh báo sắp hết hàng.
